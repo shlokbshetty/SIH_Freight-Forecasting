@@ -1,0 +1,61 @@
+import { useLocation } from 'react-router-dom';
+import { useEffect, useState } from 'react';
+import { Bell, Clock } from 'lucide-react';
+import './Header.css';
+
+const ROUTE_META: Record<string, { title: string; sub: string }> = {
+  '/':          { title: 'Command Center',    sub: 'Operational overview & live market alerts' },
+  '/map':       { title: 'Route Map',          sub: 'Interactive GIS port & vessel tracking' },
+  '/forecast':  { title: 'Freight Forecast',   sub: 'Rate prediction with confidence bands' },
+  '/matcher':   { title: 'Vessel Matcher',     sub: 'Cargo & port compatibility engine' },
+  '/contracts': { title: 'Contract Simulator', sub: 'Spot vs CVC cost comparison' },
+  '/risk':      { title: 'Risk & Alerts',      sub: 'Market disruption & port delay monitoring' },
+};
+
+export default function Header() {
+  const { pathname } = useLocation();
+  const meta = ROUTE_META[pathname] ?? ROUTE_META['/'];
+  const [time, setTime] = useState(new Date());
+
+  useEffect(() => {
+    const t = setInterval(() => setTime(new Date()), 1000);
+    return () => clearInterval(t);
+  }, []);
+
+  const timeStr = time.toLocaleTimeString('en-IN', {
+    hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false,
+  });
+  const dateStr = time.toLocaleDateString('en-IN', {
+    day: '2-digit', month: 'short', year: 'numeric',
+  });
+
+  return (
+    <header className="app-header">
+      <div className="app-header__left">
+        <h1 className="app-header__title">{meta.title}</h1>
+        <p className="app-header__sub">{meta.sub}</p>
+      </div>
+
+      <div className="app-header__right">
+        {/* Live clock */}
+        <div className="app-header__clock">
+          <Clock size={13} className="app-header__clock-icon" />
+          <span className="app-header__clock-time mono">{timeStr}</span>
+          <span className="app-header__clock-date">{dateStr} IST</span>
+        </div>
+
+        {/* Alerts bell */}
+        <button className="app-header__bell" id="header-alerts-btn" title="View alerts">
+          <Bell size={16} />
+          <span className="app-header__bell-dot" />
+        </button>
+
+        {/* Status badge */}
+        <div className="app-header__status">
+          <span className="dot dot-green" />
+          <span>Live</span>
+        </div>
+      </div>
+    </header>
+  );
+}

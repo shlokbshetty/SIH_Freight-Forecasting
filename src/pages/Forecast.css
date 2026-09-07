@@ -1,0 +1,173 @@
+.forecast-page {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  overflow: hidden;
+}
+
+/* ── Controls ───────────────────────────── */
+.forecast-controls {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 0.5rem 1.25rem;
+  background: var(--hull);
+  border-bottom: 1px solid var(--rule);
+  flex-shrink: 0;
+  flex-wrap: wrap;
+}
+
+.forecast-controls__left,
+.forecast-controls__right {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  flex-wrap: wrap;
+}
+
+/* Class btn */
+.forecast-cls-btn {
+  padding: 0.28rem 0.7rem;
+  background: var(--deck);
+  border: 1px solid var(--rule);
+  border-radius: var(--radius);
+  color: var(--chalk-dim);
+  cursor: pointer;
+  font-family: var(--font-ui);
+  font-size: 0.78rem;
+  font-weight: 500;
+  transition: background var(--transition), color var(--transition), border-color var(--transition);
+}
+.forecast-cls-btn:hover { background: var(--deck-raised); color: var(--chalk); }
+.forecast-cls-btn--active { font-weight: 600; }
+
+/* Horizon toggle */
+.forecast-horizon-btn {
+  padding: 0.28rem 0.8rem;
+  background: var(--deck);
+  border: 1px solid var(--rule);
+  border-radius: var(--radius);
+  color: var(--chalk-dim);
+  cursor: pointer;
+  font-family: var(--font-mono);
+  font-size: 0.78rem;
+  font-weight: 600;
+  transition: background var(--transition), color var(--transition), border-color var(--transition);
+}
+.forecast-horizon-btn:hover { background: var(--deck-raised); color: var(--chalk); }
+.forecast-horizon-btn--active {
+  background: var(--copper-dim);
+  border-color: var(--copper-rule);
+  color: var(--copper);
+}
+
+/* ── Stats strip ────────────────────────── */
+.forecast-stats {
+  display: flex;
+  align-items: stretch;
+  background: var(--water);
+  border-bottom: 1px solid var(--rule);
+  flex-shrink: 0;
+}
+
+.forecast-stat {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 0.5rem 1.25rem;
+  border-right: 1px solid var(--rule);
+}
+
+.forecast-stat:last-child { border-right: none; }
+
+.forecast-stat__label {
+  font-size: 0.6rem;
+  font-weight: 600;
+  color: var(--chalk-faint);
+  letter-spacing: 0.02em;
+}
+
+.forecast-stat__val {
+  font-family: var(--font-mono);
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--chalk);
+}
+
+/* ── Chart ──────────────────────────────── */
+.forecast-chart-wrap {
+  flex: 1;
+  min-height: 0;
+  padding: 1rem 1rem 0;
+}
+
+.forecast-chart-inner {
+  height: 100%;
+  background: var(--hull);
+  border: 1px solid var(--rule);
+  border-radius: var(--radius);
+}
+
+/* ── Headline sentence ──────────────────── */
+.forecast-headline {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.75rem 1.25rem;
+  flex-shrink: 0;
+  background: var(--hull);
+  border-top: 1px solid var(--rule);
+}
+
+.forecast-headline__dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.forecast-headline__text {
+  font-family: var(--font-display);
+  font-size: 0.95rem;
+  color: var(--chalk);
+  line-height: 1.4;
+}
+
+/* ── Tooltip ────────────────────────────── */
+.forecast-tooltip {
+  background: var(--hull);
+  border: 1px solid var(--rule-strong);
+  border-radius: var(--radius);
+  padding: 0.55rem 0.75rem;
+  min-width: 140px;
+}
+
+.forecast-tooltip__date {
+  font-size: 0.65rem;
+  color: var(--chalk-faint);
+  font-weight: 600;
+  letter-spacing: 0.03em;
+  margin-bottom: 0.35rem;
+  font-family: var(--font-mono);
+}
+
+.forecast-tooltip__row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  font-size: 0.75rem;
+  color: var(--chalk-dim);
+  margin-top: 0.15rem;
+}
+
+.forecast-tooltip__val {
+  font-weight: 600;
+  color: var(--chalk);
+  font-family: var(--font-mono);
+}
+
+.forecast-tooltip__val--forecast { color: var(--copper); }
+.forecast-tooltip__range { font-size: 0.68rem; color: var(--chalk-faint); }
+.forecast-tooltip__today { font-size: 0.65rem; color: var(--copper); margin-top: 0.3rem; font-family: var(--font-mono); }

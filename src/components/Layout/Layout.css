@@ -1,0 +1,22 @@
+.app-shell {
+  display: flex;
+  height: 100vh;
+  width: 100vw;
+  overflow: hidden;
+  background: var(--water);
+}
+
+.app-shell__main {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  min-width: 0;
+  background: var(--water);
+}
+
+.app-shell__content {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+}
