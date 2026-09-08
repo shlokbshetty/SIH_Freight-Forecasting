@@ -1,6 +1,6 @@
 """
 Engine package initialization.
-Exports FeasibilityEngine, FinancialEvaluator, and supporting data structures.
+Exports FeasibilityEngine, FinancialEvaluator, VoyageCostCalculator, and supporting data structures.
 """
 
 from engine.feasibility import (
@@ -18,6 +18,8 @@ from engine.ml_forecaster import (
     MultiQuantileForecaster,
     MLForecastResult,
 )
+from engine.data_models import VoyageCostBreakdown  # canonical source
+from engine.voyage_cost import VoyageCostCalculator
 
 __all__ = [
     "FeasibilityEngine",
@@ -27,6 +29,7 @@ __all__ = [
     "FinancialEvaluator",
     "EvaluationResult",
     "VoyageCostBreakdown",
+    "VoyageCostCalculator",
     "MultiQuantileForecaster",
     "MLForecastResult",
 ]

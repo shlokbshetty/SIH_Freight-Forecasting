@@ -7,32 +7,16 @@ lighterage transshipment costs, break-even thresholds, and normal forecast proba
 from dataclasses import dataclass, field
 from typing import Dict, List, Optional
 import math
+import logging
 
-from data.ports import Port
-from data.vessels import VesselClass
+from data.ports import Port, get_port
+from data.vessels import VesselClass, get_all_vessel_classes
 from data.mock_rates import OperationalCosts, MockRateProvider
-from engine.feasibility import LighteragePlan
+from engine.feasibility import FeasibilityEngine, LighteragePlan, VesselFeasibilityResult
 from engine.ml_forecaster import MultiQuantileForecaster, MLForecastResult
+from engine.data_models import VoyageCostBreakdown  # noqa: F401 — re-exported for backward compat
 
-
-@dataclass
-class VoyageCostBreakdown:
-    voyage_number: int
-    spot_freight_rate: float  # USD / Ton
-    spot_freight_cost: float  # USD
-    cvc_freight_rate: float  # USD / Ton
-    cvc_freight_cost: float  # USD
-    bunker_adj_cost: float  # USD
-    port_charges: float  # USD
-    wait_days: float  # Days
-    demurrage_cost: float  # USD
-    lighterage_tonnage: float  # Metric Tons
-    lighterage_cost: float  # USD
-    spot_voyage_total: float  # USD
-    cvc_voyage_total: float  # USD
-    voyage_savings: float  # USD (Spot Total - CVC Total)
-    p10_spot_rate: float = 0.0
-    p90_spot_rate: float = 0.0
+logger = logging.getLogger(__name__)
 
 
 @dataclass
@@ -65,6 +49,11 @@ class EvaluationResult:
     ml_forecast: Optional[MLForecastResult] = None
     p10_spot_total_usd: float = 0.0
     p90_spot_total_usd: float = 0.0
+
+    # Convenience aliases used by FastAPI response serialisation
+    @property
+    def cargo_tonnage_prop(self) -> float:
+        return self.cargo_tonnage
 
 
 class FinancialEvaluator:
@@ -301,3 +290,65 @@ class FinancialEvaluator:
             p10_spot_total_usd=p10_spot_total_usd,
             p90_spot_total_usd=p90_spot_total_usd,
         )
+
+    # ─── Task 1.12: Vessel filtering and time horizon helpers ──────────────
+
+    def get_supported_vessels(
+        self,
+        cargo_tonnage: float,
+        origin: Port,
+        destination: Port,
+    ) -> List[VesselFeasibilityResult]:
+        """
+        Returns a ranked list of feasible vessel classes for the given cargo and route.
+
+        Filters vessels by feasibility (draft, LOA, beam constraints) using FeasibilityEngine
+        and returns them ranked by suitability_score descending.
+
+        Args:
+            cargo_tonnage: Cargo size in metric tons.
+            origin:        Origin port object.
+            destination:   Destination port object.
+
+        Returns:
+            List of VesselFeasibilityResult sorted by suitability_score (highest first),
+            including only feasible vessels (is_feasible=True).
+        """
+        engine = FeasibilityEngine(op_costs=self.op_costs)
+        all_results = engine.evaluate_route(cargo_tonnage, origin, destination)
+        feasible = [r for r in all_results if r.is_feasible]
+        logger.info(
+            "get_supported_vessels: %d/%d vessels feasible for %s→%s %.0fT",
+            len(feasible), len(all_results), origin.code, destination.code, cargo_tonnage,
+        )
+        return feasible
+
+    @staticmethod
+    def get_voyage_count(time_horizon_months: int) -> int:
+        """
+        Maps a time horizon (months) to the number of voyages in the evaluation window.
+
+        Mapping (Newcastle–Haldia Panamax reference):
+            1 month  → 1 voyage
+            3 months → 4 voyages
+            6 months → 8 voyages
+
+        For unsupported time horizons, falls back proportionally (1 voyage per ~3 weeks).
+
+        Args:
+            time_horizon_months: Horizon in calendar months (positive integer).
+
+        Returns:
+            Integer number of voyages for the evaluation window.
+        """
+        _HORIZON_MAP = {1: 1, 3: 4, 6: 8}
+        if time_horizon_months in _HORIZON_MAP:
+            return _HORIZON_MAP[time_horizon_months]
+
+        # Fallback: approximate 1 voyage per 0.75 months (standard 3-week cycle)
+        voyages = max(1, round(time_horizon_months / 0.75))
+        logger.warning(
+            "get_voyage_count: non-standard horizon %d months → %d voyages (estimated)",
+            time_horizon_months, voyages,
+        )
+        return voyages
