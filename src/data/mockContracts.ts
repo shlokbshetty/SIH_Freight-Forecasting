@@ -1,53 +1,74 @@
-// ─── Contract Comparison Mock Data ───────────────────────────────────────────
+// ─── Default programme for the Spot vs CVC evaluator ──────────────────────────
+// The costing itself lives in src/lib/cvcEngine.ts and is driven entirely by
+// ports.ts, vessels.ts, the forecast series and costAssumptions.ts. This file
+// only supplies the programme the page opens on, plus a few saved shapes.
 
-export interface ContractLineItem {
-  label: string;
-  spot: number;    // INR Crores
-  cvc: number;     // INR Crores
-}
+import type { CvcInputs } from '../lib/cvcEngine';
+import { DEFAULT_DEMURRAGE_USD_PER_DAY, BUNKER_BASIS_USD } from './costAssumptions';
 
-export interface ContractScenario {
-  id: string;
-  route: string;             // e.g. "Newcastle → Paradip"
-  vesselClass: string;
-  cargoTonnes: number;
-  numVoyages: number;        // number of spot voyages vs 1 CVC
-  spotRate: number;          // USD / MT
-  cvcRate: number;           // USD / MT (negotiated)
-  bunkerPrice: number;       // USD / MT (default slider value)
-  cvcDiscount: number;       // % discount on CVC vs spot
-  lineItems: ContractLineItem[];
-  verdictSummary: string;
-  breakEvenRate: number;     // USD/MT at which spot == CVC
-  confidencePct: number;     // probability spot wins
-}
-
-export const MOCK_CONTRACT_SCENARIO: ContractScenario = {
-  id: 'newcastle-paradip-supramax',
-  route: 'Newcastle → Paradip',
+export const DEFAULT_PROGRAMME: CvcInputs = {
+  loadPortId: 'newcastle',
+  dischargePortId: 'paradip',
   vesselClass: 'Supramax',
-  cargoTonnes: 200000,
+  cargoTonnes: 55_000,
   numVoyages: 4,
-  spotRate: 18.4,
-  cvcRate: 15.8,
-  bunkerPrice: 620,
-  cvcDiscount: 14.1,
-  lineItems: [
-    { label: 'Base Freight',         spot: 6.78,  cvc: 5.82 },
-    { label: 'Bunker Adjustment',    spot: 1.24,  cvc: 1.10 },
-    { label: 'Port Charges',         spot: 0.88,  cvc: 0.88 },
-    { label: 'Expected Demurrage',   spot: 0.62,  cvc: 0.30 },
-    { label: 'Lighterage',           spot: 0.00,  cvc: 0.00 },
-  ],
-  verdictSummary: 'CVC saves ₹4.2 Cr · break-even $18.40/T · 22% chance spot wins',
-  breakEvenRate: 18.4,
-  confidencePct: 22,
+  bunkerPriceUsd: BUNKER_BASIS_USD,
+  demurrageUsdPerDay: DEFAULT_DEMURRAGE_USD_PER_DAY,
+  cvcDiscountPct: 5,
 };
 
-// Stacked spot segment heights (simulate volatility visually)
-export const MOCK_SPOT_SEGMENTS = [
-  { voyage: 1, rateDelta: +1.2 },
-  { voyage: 2, rateDelta: -0.4 },
-  { voyage: 3, rateDelta: +2.1 },
-  { voyage: 4, rateDelta: -0.8 },
+export interface ProgrammePreset {
+  id: string;
+  label: string;
+  hint: string;
+  inputs: CvcInputs;
+}
+
+/** Shapes that exercise the constraint engine as well as the rate model. */
+export const PROGRAMME_PRESETS: ProgrammePreset[] = [
+  {
+    id: 'newcastle-paradip',
+    label: 'Newcastle → Paradip',
+    hint: 'Supramax · 4 voyages · clears on draft',
+    inputs: DEFAULT_PROGRAMME,
+  },
+  {
+    id: 'gladstone-gangavaram',
+    label: 'Gladstone → Gangavaram',
+    hint: 'Panamax · 6 voyages · deep-water berth',
+    inputs: {
+      ...DEFAULT_PROGRAMME,
+      loadPortId: 'gladstone',
+      dischargePortId: 'gangavaram',
+      vesselClass: 'Panamax',
+      cargoTonnes: 72_000,
+      numVoyages: 6,
+    },
+  },
+  {
+    id: 'kalimantan-haldia',
+    label: 'Kalimantan → Haldia',
+    hint: 'Panamax · lighterage at Sagar/Sandheads',
+    inputs: {
+      ...DEFAULT_PROGRAMME,
+      loadPortId: 'kalimantan',
+      dischargePortId: 'haldia',
+      vesselClass: 'Panamax',
+      cargoTonnes: 68_000,
+      numVoyages: 4,
+    },
+  },
+  {
+    id: 'beira-vizag',
+    label: 'Beira → Vizag',
+    hint: 'Handysize · 5 voyages · slow load port',
+    inputs: {
+      ...DEFAULT_PROGRAMME,
+      loadPortId: 'beira',
+      dischargePortId: 'vizag',
+      vesselClass: 'Handysize',
+      cargoTonnes: 35_000,
+      numVoyages: 5,
+    },
+  },
 ];
