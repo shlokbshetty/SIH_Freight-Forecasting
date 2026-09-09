@@ -1,0 +1,251 @@
+.map-page {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  overflow: hidden;
+}
+
+/* ── Controls bar ───────────────────────── */
+.map-controls {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.75rem 1.5rem;
+  background: var(--bg-surface);
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+  flex-wrap: wrap;
+}
+
+.map-controls__left {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.map-controls__right {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.map-controls__label {
+  font-size: 0.7rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  margin-right: 0.25rem;
+  white-space: nowrap;
+}
+
+/* ── Vessel selector buttons ────────────── */
+.map-vessel-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 1px;
+  padding: 0.35rem 0.75rem;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  color: var(--text-secondary);
+  cursor: pointer;
+  font-family: inherit;
+  transition: all var(--transition);
+}
+
+.map-vessel-btn:hover {
+  background: var(--bg-elevated);
+  color: var(--text-primary);
+}
+
+.map-vessel-btn--active {
+  font-weight: 600;
+}
+
+.map-vessel-btn .map-vessel-btn__spec {
+  font-size: 0.62rem;
+  color: var(--text-muted);
+  font-family: 'JetBrains Mono', monospace;
+}
+
+.map-vessel-btn--active .map-vessel-btn__spec {
+  color: inherit;
+  opacity: 0.7;
+}
+
+/* ── Legend ─────────────────────────────── */
+.map-legend {
+  display: flex;
+  align-items: center;
+  gap: 1.25rem;
+  padding: 0.45rem 1.5rem;
+  background: var(--bg-base);
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+}
+
+.map-legend__item {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.72rem;
+  color: var(--text-secondary);
+}
+
+.map-legend__dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.map-legend__square {
+  width: 10px;
+  height: 10px;
+  border-radius: 2px;
+  background: #60a5fa44;
+  border: 1.5px solid #60a5fa;
+  flex-shrink: 0;
+}
+
+/* ── Vessel info strip ──────────────────── */
+.map-vessel-info {
+  display: flex;
+  align-items: center;
+  gap: 1.25rem;
+  padding: 0.4rem 1.5rem;
+  background: var(--bg-surface);
+  border-bottom: 1px solid var(--border);
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+  flex-shrink: 0;
+  flex-wrap: wrap;
+}
+
+.map-vessel-info__cls {
+  font-weight: 700;
+  font-size: 0.8rem;
+}
+
+.map-vessel-info span b {
+  color: var(--text-primary);
+  font-weight: 600;
+}
+
+.map-vessel-info__desc {
+  color: var(--text-muted);
+  font-size: 0.7rem;
+  margin-left: auto;
+  font-style: italic;
+  max-width: 400px;
+}
+
+/* ── Map container ──────────────────────── */
+.map-container {
+  flex: 1;
+  min-height: 0;
+}
+
+/* ── Leaflet popup overrides ────────────── */
+.leaflet-popup-content-wrapper {
+  background: var(--bg-card) !important;
+  border: 1px solid var(--border) !important;
+  border-radius: var(--radius-lg) !important;
+  box-shadow: var(--shadow-card) !important;
+  padding: 0 !important;
+}
+
+.leaflet-popup-content {
+  margin: 0 !important;
+  min-width: 220px;
+}
+
+.leaflet-popup-tip {
+  background: var(--bg-card) !important;
+}
+
+.map-popup {
+  padding: 0.85rem 1rem;
+  font-family: 'Inter', sans-serif;
+}
+
+.map-popup__header {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.65rem;
+}
+
+.map-popup__header strong {
+  font-size: 0.9rem;
+  color: #f0f4ff;
+  flex: 1;
+}
+
+.map-popup__dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.map-popup__badge {
+  font-size: 0.65rem;
+  font-weight: 600;
+  padding: 0.15rem 0.45rem;
+  border-radius: 99px;
+  border: 1px solid;
+  white-space: nowrap;
+}
+
+.map-popup__grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.35rem 0.75rem;
+}
+
+.map-popup__item {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.map-popup__item span {
+  font-size: 0.62rem;
+  color: #4a5568;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.map-popup__item b {
+  font-size: 0.78rem;
+  color: #94a3b8;
+  font-weight: 500;
+}
+
+.map-popup__warn {
+  margin-top: 0.6rem;
+  font-size: 0.72rem;
+  color: #fcd34d;
+  background: rgba(245, 158, 11, 0.1);
+  border-radius: var(--radius-sm);
+  padding: 0.3rem 0.5rem;
+}
+
+.map-popup__note {
+  margin-top: 0.4rem;
+  font-size: 0.7rem;
+  color: #64748b;
+  line-height: 1.4;
+  font-style: italic;
+}
+
+/* btn size override */
+.btn--sm {
+  padding: 0.35rem 0.75rem;
+  font-size: 0.78rem;
+}
