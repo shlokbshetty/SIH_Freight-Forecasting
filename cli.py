@@ -520,6 +520,48 @@ def handle_train_ml():
     console.print("[bold green]✔ All Multi-Quantile models successfully trained and persisted to disk.[/bold green]\n")
 
 
+def handle_evaluate():
+    """Runs full ML model evaluation: computes metrics and generates diagnostic plots."""
+    print_banner()
+    from engine.evaluator import run_full_evaluation
+    from engine.ml_forecaster import ROUTE_COLUMN_MAPPING
+
+    console.print("\n[bold cyan]▶ ML MODEL EVALUATION & DIAGNOSTIC VISUALISATION[/bold cyan]")
+    console.print("[dim]  Computing MAE, RMSE, MAPE, R², Pinball Loss across all benchmark corridors…[/dim]\n")
+
+    # Unique route codes
+    route_codes = list(dict.fromkeys(ROUTE_COLUMN_MAPPING.values()))
+
+    all_results = []
+    for rc in route_codes:
+        console.print(f"[bold yellow]  ▸ Evaluating:[/bold yellow] {rc}")
+        try:
+            result = run_full_evaluation(rc)
+            all_results.append(result)
+        except Exception as exc:
+            console.print(f"  [bold red]✘ Failed:[/bold red] {rc} — {exc}")
+
+    # Summary of generated artefacts
+    from rich.table import Table
+    from rich import box as rbox
+
+    tbl = Table(
+        title="[bold]Generated Diagnostic Reports[/bold]",
+        box=rbox.ROUNDED,
+        header_style="bold magenta",
+        expand=True,
+    )
+    tbl.add_column("Plot", style="cyan")
+    tbl.add_column("Saved At", style="dim white")
+
+    if all_results:
+        for path in all_results[0].get("plot_paths", []):
+            tbl.add_row(os.path.basename(path), path)
+
+    console.print(tbl)
+    console.print("[bold green]✔ All evaluation artefacts saved to reports/plots/[/bold green]\n")
+
+
 def main():
     parser = argparse.ArgumentParser(
         description="Ministry of Ports, Shipping and Waterways - Freight Procurement & Feasibility CLI",
@@ -542,6 +584,11 @@ def main():
         "--train-ml",
         action="store_true",
         help="Retrain Multi-Quantile LightGBM models (p10, p50, p90) on historical Parquet data.",
+    )
+    parser.add_argument(
+        "--evaluate",
+        action="store_true",
+        help="Run full ML model diagnostics: compute MAE/RMSE/MAPE/R²/Pinball and save plots to reports/plots/.",
     )
     parser.add_argument(
         "--cargo",
@@ -586,6 +633,8 @@ def main():
         handle_update_data()
     elif args.train_ml:
         handle_train_ml()
+    elif args.evaluate:
+        handle_evaluate()
     elif args.demo:
         run_demo_scenarios()
     else:
