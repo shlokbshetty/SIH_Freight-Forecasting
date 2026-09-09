@@ -1,0 +1,208 @@
+.forecast-page {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  overflow: hidden;
+}
+
+/* ── Controls ───────────────────────────── */
+.forecast-controls {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.75rem 1.5rem;
+  background: var(--bg-surface);
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+  flex-wrap: wrap;
+}
+
+.forecast-controls__left,
+.forecast-controls__right {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  flex-wrap: wrap;
+}
+
+/* Vessel class btn */
+.forecast-cls-btn {
+  padding: 0.3rem 0.75rem;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  color: var(--text-secondary);
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 0.82rem;
+  font-weight: 500;
+  transition: all var(--transition);
+}
+
+.forecast-cls-btn:hover {
+  background: var(--bg-elevated);
+  color: var(--text-primary);
+}
+
+.forecast-cls-btn--active {
+  font-weight: 600;
+}
+
+/* Horizon toggle */
+.forecast-horizon-btn {
+  padding: 0.3rem 0.85rem;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  color: var(--text-secondary);
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 0.85rem;
+  font-weight: 600;
+  transition: all var(--transition);
+}
+
+.forecast-horizon-btn:hover {
+  background: var(--bg-elevated);
+  color: var(--text-primary);
+}
+
+.forecast-horizon-btn--active {
+  background: rgba(59, 130, 246, 0.12);
+  border-color: rgba(59, 130, 246, 0.4);
+  color: var(--accent-blue);
+}
+
+/* ── Stats strip ────────────────────────── */
+.forecast-stats {
+  display: flex;
+  align-items: center;
+  gap: 0;
+  padding: 0.6rem 1.5rem;
+  background: var(--bg-base);
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+  flex-wrap: wrap;
+}
+
+.forecast-stat {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 0 1.5rem 0 0;
+}
+
+.forecast-stat__label {
+  font-size: 0.65rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.forecast-stat__val {
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.forecast-stat__div {
+  width: 1px;
+  height: 32px;
+  background: var(--border);
+  margin: 0 1.5rem 0 0;
+  flex-shrink: 0;
+}
+
+/* ── Chart ──────────────────────────────── */
+.forecast-chart-wrap {
+  flex: 1;
+  min-height: 0;
+  padding: 1rem 1rem 0;
+}
+
+.forecast-chart-inner {
+  height: 100%;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 0.5rem 0 0.5rem 0;
+  box-shadow: var(--shadow-card);
+}
+
+/* ── Headline sentence ──────────────────── */
+.forecast-headline {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 1rem 1.5rem;
+  flex-shrink: 0;
+  background: var(--bg-surface);
+  border-top: 1px solid var(--border);
+}
+
+.forecast-headline__dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.forecast-headline__text {
+  font-size: 1rem;
+  font-weight: 500;
+  color: var(--text-primary);
+  line-height: 1.5;
+}
+
+/* ── Tooltip ────────────────────────────── */
+.forecast-tooltip {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 0.65rem 0.85rem;
+  box-shadow: var(--shadow-card);
+  min-width: 150px;
+}
+
+.forecast-tooltip__date {
+  font-size: 0.72rem;
+  color: var(--text-muted);
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  margin-bottom: 0.4rem;
+}
+
+.forecast-tooltip__row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  font-size: 0.82rem;
+  color: var(--text-secondary);
+  margin-top: 0.2rem;
+}
+
+.forecast-tooltip__val {
+  font-weight: 700;
+  color: var(--text-primary);
+  font-family: 'JetBrains Mono', monospace;
+}
+
+.forecast-tooltip__val--forecast {
+  color: var(--accent-blue);
+}
+
+.forecast-tooltip__range {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+}
+
+.forecast-tooltip__today {
+  font-size: 0.68rem;
+  color: var(--accent-blue);
+  margin-top: 0.4rem;
+  font-weight: 600;
+}
