@@ -9,6 +9,7 @@ import { VESSEL_CLASSES, type VesselClass } from '../data/vessels';
 import { DEFAULT_PROGRAMME, PROGRAMME_PRESETS } from '../data/mockContracts';
 import { BUNKER_BASIS_USD, USD_INR } from '../data/costAssumptions';
 import { breakEvenDensity, cumulativeSeries, evaluate, type CvcInputs, type CvcResult } from '../lib/cvcEngine';
+import { useTheme } from '../store/themeStore';
 import './ContractComparison.css';
 
 // ─── Series colours ───────────────────────────────────────────────────────────
@@ -23,6 +24,27 @@ const CVC_HUE = '#5a93e8';
 function cr(n: number, digits?: number): string {
   const d = digits ?? (Math.abs(n) >= 10 ? 1 : 2);
   return `₹${n.toFixed(d)} Cr`;
+}
+
+/** USD primary + INR crores secondary (small). usdVal = raw USD, crVal = INR crores. */
+function DualCost({ usdVal, crVal, digits }: { usdVal: number; crVal: number; digits?: number }) {
+  const d = digits ?? (Math.abs(crVal) >= 10 ? 1 : 2);
+  return (
+    <span style={{ display: 'inline-flex', alignItems: 'baseline', gap: '0.35em' }}>
+      <span>${(usdVal / 1e6).toFixed(2)}M</span>
+      <span style={{ fontSize: '0.72em', opacity: 0.55, fontWeight: 400 }}>₹{crVal.toFixed(d)} Cr</span>
+    </span>
+  );
+}
+
+/** Rate in $/T primary, ₹/T small. */
+function DualRate({ usdPerMt }: { usdPerMt: number }) {
+  return (
+    <span style={{ display: 'inline-flex', alignItems: 'baseline', gap: '0.3em' }}>
+      <span>${usdPerMt.toFixed(2)}/T</span>
+      <span style={{ fontSize: '0.72em', opacity: 0.55, fontWeight: 400 }}>₹{(usdPerMt * USD_INR).toFixed(0)}/T</span>
+    </span>
+  );
 }
 
 /** CVC measured against spot: a negative figure means the lock costs less. */
@@ -94,6 +116,11 @@ function endLabel(lastIndex: number, text: string, fill: string, dy: number) {
 
 function CumulativeChart({ result }: { result: CvcResult }) {
   const data = useMemo(() => cumulativeSeries(result), [result]);
+  const { theme } = useTheme();
+  const gridColor  = theme === 'dark' ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.06)';
+  const axisColor  = theme === 'dark' ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.10)';
+  const cursorColor= theme === 'dark' ? 'rgba(255,255,255,0.16)' : 'rgba(0,0,0,0.16)';
+  const tickColor  = theme === 'dark' ? 'var(--chalk-faint)' : '#6b7280';
 
   // Whichever programme finishes higher gets its label above the point, so the
   // two never converge when the lines cross.
@@ -105,21 +132,21 @@ function CumulativeChart({ result }: { result: CvcResult }) {
     <div className="cc-chart">
       <ResponsiveContainer width="100%" height="100%">
         <ComposedChart data={data} margin={{ top: 22, right: 18, left: 4, bottom: 4 }}>
-          <CartesianGrid stroke="rgba(255,255,255,0.05)" vertical={false} />
+          <CartesianGrid stroke={gridColor} vertical={false} />
           <XAxis
             dataKey="voyage"
-            tick={{ fill: 'var(--chalk-faint)', fontSize: 11 }}
+            tick={{ fill: tickColor, fontSize: 11 }}
             tickLine={false}
-            axisLine={{ stroke: 'rgba(255,255,255,0.08)' }}
+            axisLine={{ stroke: axisColor }}
           />
           <YAxis
-            tick={{ fill: 'var(--chalk-faint)', fontSize: 11 }}
+            tick={{ fill: tickColor, fontSize: 11 }}
             tickLine={false}
             axisLine={false}
             width={52}
             tickFormatter={(v: number) => `₹${v.toFixed(0)}`}
           />
-          <Tooltip content={<CumulativeTooltip />} cursor={{ stroke: 'rgba(255,255,255,0.16)' }} />
+          <Tooltip content={<CumulativeTooltip />} cursor={{ stroke: cursorColor }} />
 
           {/* Where the forecast's 90% band puts the spot programme */}
           <Area
@@ -178,6 +205,10 @@ function BreakEvenChart({ result }: { result: CvcResult }) {
     () => (data.length ? rateTicks(data[0].rate, data[data.length - 1].rate) : { ticks: [], step: 1 }),
     [data],
   );
+  const { theme } = useTheme();
+  const gridColor = theme === 'dark' ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.06)';
+  const axisColor = theme === 'dark' ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.10)';
+  const tickColor = theme === 'dark' ? 'var(--chalk-faint)' : '#6b7280';
 
   if (!data.length) {
     return <div className="cc-chart cc-chart--empty">Forecast band too narrow to price this risk.</div>;
@@ -187,14 +218,14 @@ function BreakEvenChart({ result }: { result: CvcResult }) {
     <div className="cc-chart">
       <ResponsiveContainer width="100%" height="100%">
         <AreaChart data={data} margin={{ top: 26, right: 14, left: 4, bottom: 4 }}>
-          <CartesianGrid stroke="rgba(255,255,255,0.05)" vertical={false} />
+          <CartesianGrid stroke={gridColor} vertical={false} />
           <XAxis
             dataKey="rate"
             type="number"
             domain={['dataMin', 'dataMax']}
-            tick={{ fill: 'var(--chalk-faint)', fontSize: 11 }}
+            tick={{ fill: tickColor, fontSize: 11 }}
             tickLine={false}
-            axisLine={{ stroke: 'rgba(255,255,255,0.08)' }}
+            axisLine={{ stroke: axisColor }}
             ticks={axis.ticks}
             tickFormatter={(v: number) => `$${v.toFixed(axis.step < 1 ? 1 : 0)}`}
           />
@@ -439,7 +470,7 @@ export default function ContractComparison() {
 
           <div className="cc-kpi">
             <span className="cc-kpi__label">Break-even spot rate</span>
-            <span className="cc-kpi__val mono">{usd(breakEvenUsdPerMt)}<i>/T</i></span>
+            <span className="cc-kpi__val mono"><DualRate usdPerMt={breakEvenUsdPerMt} /></span>
             <span className="cc-kpi__sub">
               the average spot level where both programmes cost the same
             </span>
@@ -454,16 +485,32 @@ export default function ContractComparison() {
               {pct(probSpotWins)}
             </span>
             <span className="cc-kpi__sub">
-              forecast {usd(rateDistribution.mean)}/T average, ±{usd(rateDistribution.sd * 1.645).replace('$', '')} at 90%
+              forecast <DualRate usdPerMt={rateDistribution.mean} /> average, ±{usd(rateDistribution.sd * 1.645).replace('$', '')} at 90%
             </span>
           </div>
 
           <div className="cc-kpi">
             <span className="cc-kpi__label">Locked CVC rate</span>
-            <span className="cc-kpi__val mono" style={{ color: CVC_HUE }}>{usd(lockedRateUsdPerMt)}<i>/T</i></span>
+            <span className="cc-kpi__val mono" style={{ color: CVC_HUE }}><DualRate usdPerMt={lockedRateUsdPerMt} /></span>
             <span className="cc-kpi__sub">
-              {inputs.cvcDiscountPct.toFixed(1)}% off today's {usd(marketRateUsdPerMt)}/T market
+              {inputs.cvcDiscountPct.toFixed(1)}% off today's <DualRate usdPerMt={marketRateUsdPerMt} /> market
             </span>
+          </div>
+
+          <div className="cc-kpi">
+            <span className="cc-kpi__label">Spot total</span>
+            <span className="cc-kpi__val mono">
+              <DualCost usdVal={spot.totalUsd} crVal={spot.totalCr} />
+            </span>
+            <span className="cc-kpi__sub">whole programme, spot pricing</span>
+          </div>
+
+          <div className="cc-kpi">
+            <span className="cc-kpi__label">CVC total</span>
+            <span className="cc-kpi__val mono" style={{ color: CVC_HUE }}>
+              <DualCost usdVal={cvc.totalUsd} crVal={cvc.totalCr} />
+            </span>
+            <span className="cc-kpi__sub">whole programme, locked rate</span>
           </div>
         </div>
 
@@ -503,7 +550,7 @@ export default function ContractComparison() {
             </div>
             <BreakEvenChart result={result} />
             <p className="cc-chart-note">
-              The curve peaks at the forecast's {usd(rateDistribution.mean)}/T programme average, and
+              The curve peaks at the forecast's <DualRate usdPerMt={rateDistribution.mean} /> programme average, and
               the area either side of the break-even is the probability that side comes out cheaper.
               Forecast misses travel together across months, so averaging {inputs.numVoyages} voyages
               narrows the spread far less than independent draws would.
@@ -534,9 +581,9 @@ export default function ContractComparison() {
                     <tr key={v.index}>
                       <td className="cc-table__label">V{v.index}</td>
                       <td className="cc-muted">{v.label}</td>
-                      <td className="cc-num mono">{usd(v.rateUsdPerMt)}/T</td>
-                      <td className="cc-num mono cc-col-spot">{cr(v.total * USD_INR / 1e7)}</td>
-                      <td className="cc-num mono cc-col-cvc">{cr(c.total * USD_INR / 1e7)}</td>
+                      <td className="cc-num mono"><DualRate usdPerMt={v.rateUsdPerMt} /></td>
+                      <td className="cc-num mono cc-col-spot"><DualCost usdVal={v.total} crVal={v.total * USD_INR / 1e7} /></td>
+                      <td className="cc-num mono cc-col-cvc"><DualCost usdVal={c.total} crVal={c.total * USD_INR / 1e7} /></td>
                       <td className="cc-num mono" style={{ color: d <= 0 ? 'var(--sig-green)' : 'var(--sig-red)' }}>
                         {vsSpot(d)}
                       </td>
@@ -547,9 +594,9 @@ export default function ContractComparison() {
               <tfoot>
                 <tr className="cc-table__total">
                   <td colSpan={2}>Programme</td>
-                  <td className="cc-num">{usd(spot.avgRateUsdPerMt)}/T avg</td>
-                  <td className="cc-num">{cr(spot.totalCr)}</td>
-                  <td className="cc-num">{cr(cvc.totalCr)}</td>
+                  <td className="cc-num"><DualRate usdPerMt={spot.avgRateUsdPerMt} /></td>
+                  <td className="cc-num"><DualCost usdVal={spot.totalUsd} crVal={spot.totalCr} /></td>
+                  <td className="cc-num"><DualCost usdVal={cvc.totalUsd} crVal={cvc.totalCr} /></td>
                   <td className="cc-num" style={{ color: cvcWins ? 'var(--sig-green)' : 'var(--sig-red)' }}>
                     {vsSpot(-deltaCr)}
                   </td>
@@ -576,14 +623,16 @@ export default function ContractComparison() {
                 {lineItems.map(item => {
                   const d = item.cvcCr - item.spotCr;
                   const inert = Math.abs(d) < 0.005;
+                  const spotUsd = item.spotCr * 1e7 / USD_INR;
+                  const cvcUsd = item.cvcCr * 1e7 / USD_INR;
                   return (
                     <tr key={item.label}>
                       <td className="cc-table__label">
                         <span>{item.label}</span>
                         {item.note && <span className="cc-note">{item.note}</span>}
                       </td>
-                      <td className="cc-num mono cc-col-spot">{cr(item.spotCr)}</td>
-                      <td className="cc-num mono cc-col-cvc">{cr(item.cvcCr)}</td>
+                      <td className="cc-num mono cc-col-spot"><DualCost usdVal={spotUsd} crVal={item.spotCr} /></td>
+                      <td className="cc-num mono cc-col-cvc"><DualCost usdVal={cvcUsd} crVal={item.cvcCr} /></td>
                       <td
                         className="cc-num mono"
                         style={{ color: inert ? 'var(--chalk-faint)' : d < 0 ? 'var(--sig-green)' : 'var(--sig-red)' }}
@@ -597,8 +646,8 @@ export default function ContractComparison() {
               <tfoot>
                 <tr className="cc-table__total">
                   <td>Total</td>
-                  <td className="cc-num">{cr(spot.totalCr)}</td>
-                  <td className="cc-num">{cr(cvc.totalCr)}</td>
+                  <td className="cc-num"><DualCost usdVal={spot.totalUsd} crVal={spot.totalCr} /></td>
+                  <td className="cc-num"><DualCost usdVal={cvc.totalUsd} crVal={cvc.totalCr} /></td>
                   <td className="cc-num" style={{ color: cvcWins ? 'var(--sig-green)' : 'var(--sig-red)' }}>
                     {vsSpot(-deltaCr)}
                   </td>

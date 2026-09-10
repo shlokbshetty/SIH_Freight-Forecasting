@@ -6,6 +6,7 @@ import Forecast from './pages/Forecast';
 import Matcher from './pages/Matcher';
 import ContractComparison from './pages/ContractComparison';
 import RiskAlerts from './pages/RiskAlerts';
+import VoyageEditor from './pages/VoyageEditor';
 
 export default function App() {
   return (
@@ -16,8 +17,9 @@ export default function App() {
           <Route path="/map"        element={<MapPage />}          />
           <Route path="/forecast"   element={<Forecast />}         />
           <Route path="/matcher"    element={<Matcher />}          />
-          <Route path="/contracts"  element={<ContractComparison />} />
-          <Route path="/risk"       element={<RiskAlerts />}       />
+          <Route path="/contracts"     element={<ContractComparison />} />
+          <Route path="/risk"          element={<RiskAlerts />}       />
+          <Route path="/voyage-editor" element={<VoyageEditor />}     />
         </Route>
       </Routes>
     </BrowserRouter>

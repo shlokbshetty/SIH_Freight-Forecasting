@@ -1,7 +1,9 @@
 import { useState, useMemo } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { DISCHARGE_PORTS, LOADING_PORTS, getPortStatus } from '../data/ports';
 import { VESSEL_SPECS, VESSEL_CLASSES, type VesselClass } from '../data/vessels';
-import { Search, CheckCircle, AlertCircle, XCircle, ChevronRight, Info } from 'lucide-react';
+import { Search, CheckCircle, AlertCircle, XCircle, ChevronRight, Info, ArrowRight } from 'lucide-react';
+import { useCharter } from '../store/charterStore';
 import './Matcher.css';
 
 const COMMODITIES = ['Coal', 'Coking Coal', 'Iron Ore', 'Bauxite', 'Fertilizer', 'Grain', 'Limestone'];
@@ -105,6 +107,8 @@ const RANK_ORDER: Record<Verdict, number> = { available: 0, constrained: 1, bloc
 
 // ─── Component ────────────────────────────────────────────────────────────────
 export default function Matcher() {
+  const navigate = useNavigate();
+  const { setSelectedVessel } = useCharter();
   const [tonnage,    setTonnage]    = useState(55000);
   const [commodity,  setCommodity]  = useState('Coal');
   const [originId,   setOriginId]   = useState('newcastle');
@@ -127,6 +131,19 @@ export default function Matcher() {
 
   const handleSearch = () => setSearched(true);
   const handleChange = () => setSearched(false);
+
+  function handleSelectVessel(v: VesselVerdict) {
+    setSelectedVessel({
+      cls: v.cls,
+      originId,
+      dischargeId,
+      tonnage,
+      commodity,
+      targetMonth,
+      estimatedCost: v.estimatedCost,
+    });
+    navigate('/voyage-editor');
+  }
 
   return (
     <div className="matcher-page">
@@ -357,6 +374,16 @@ export default function Matcher() {
                       <div className="matcher-card__description">
                         {spec.description}
                       </div>
+                    )}
+
+                    {!isBlocked && (
+                      <button
+                        id={`btn-select-${v.cls.toLowerCase()}`}
+                        className="btn btn-primary matcher-card__select-btn"
+                        onClick={() => handleSelectVessel(v)}
+                      >
+                        Select Vessel <ArrowRight size={13} />
+                      </button>
                     )}
                   </div>
                 );
