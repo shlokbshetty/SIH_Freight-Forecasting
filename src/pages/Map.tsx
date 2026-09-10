@@ -624,8 +624,9 @@ export default function MapPage() {
     vesselMarker.addTo(map);
     sealaneLayersRef.current.push(vesselMarker);
 
-    const animDuration = 14000; // 14 seconds loop
+    const animDuration = 45000; // 45 seconds for a realistic, majestic nautical voyage speed
     let startTime: number | null = null;
+    let lastBearing = -1;
 
     function stepAnimation(timestamp: number) {
       if (!startTime) startTime = timestamp;
@@ -633,11 +634,14 @@ export default function MapPage() {
       const progress = elapsed / animDuration;
 
       const pos = interpolateWaypoints(waypoints, progress);
-      const nextPos = interpolateWaypoints(waypoints, Math.min(progress + 0.005, 1.0));
-      const bearing = calculateBearing(pos, nextPos);
+      const nextPos = interpolateWaypoints(waypoints, Math.min(progress + 0.002, 1.0));
+      const bearing = Math.round(calculateBearing(pos, nextPos));
 
       vesselMarker.setLatLng(pos);
-      vesselMarker.setIcon(makeVesselIcon(bearing));
+      if (Math.abs(bearing - lastBearing) >= 2) {
+        vesselMarker.setIcon(makeVesselIcon(bearing));
+        lastBearing = bearing;
+      }
 
       animFrameRef.current = requestAnimationFrame(stepAnimation);
     }
