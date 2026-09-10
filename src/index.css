@@ -367,7 +367,7 @@ h3 { font-family: var(--font-ui); font-size: 0.85rem; font-weight: 600; color: v
   border-radius: var(--radius);
   font-family: var(--font-ui) !important;
 }
-.leaflet-tile-pane { filter: brightness(0.55) saturate(0.3); }
+.leaflet-tile-pane { filter: brightness(0.4) saturate(0.22) contrast(1.1); }
 [data-theme="light"] .leaflet-tile-pane { filter: none; }
 .leaflet-popup-content-wrapper {
   background: var(--hull) !important;

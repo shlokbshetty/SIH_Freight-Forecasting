@@ -1,118 +1,61 @@
-/**
- * API client for the Maritime Freight Forecasting backend.
- * Connects to FastAPI endpoints at http://localhost:8000
- */
+// ─── Backend client ───────────────────────────────────────────────────────────
+//
+// Every call is allowed to fail. The dashboard shipped as a fully static app and
+// must keep working that way: if the FastAPI service is not running, each screen
+// falls back to the bundled data and says so, rather than showing an error page.
+//
+// That mirrors the backend's own rule. A dead source degrades to cached values
+// with a visible staleness flag; a dead backend degrades to bundled values with
+// a visible offline flag. Nothing silently pretends to be live.
 
-const API_BASE = "http://localhost:8000";
+const DEFAULT_BASE = 'http://localhost:8000';
 
-// ─── Request / Response types ─────────────────────────────────────────────────
+export const API_BASE: string =
+  (import.meta.env?.VITE_API_BASE as string | undefined)?.replace(/\/$/, '') ?? DEFAULT_BASE;
 
-export interface EvaluationRequest {
-  cargo_tonnage: number;
-  origin_code: string;
-  destination_code: string;
-  vessel_code: string;
-  num_voyages: number;
-  cvc_discount_pct: number;
-}
+/** Abandon a request after this long. A slow backend must not hang a screen. */
+const TIMEOUT_MS = 8000;
 
-export interface LighterageResponse {
-  is_required: boolean;
-  location: string | null;
-  excess_draft: number;
-  lightered_tonnage: number;
-  retained_tonnage: number;
-  lighterage_cost: number;
-  time_penalty_days: number;
-  warning_message: string | null;
-}
+export class ApiError extends Error {
+  // A declared field rather than a constructor parameter property: the project
+  // builds with erasableSyntaxOnly, which forbids the shorthand.
+  status?: number;
 
-export interface VoyageBreakdown {
-  voyage_number: number;
-  spot_freight_rate: number;
-  spot_freight_cost: number;
-  cvc_freight_rate: number;
-  cvc_freight_cost: number;
-  bunker_adj_cost: number;
-  port_charges: number;
-  wait_days: number;
-  demurrage_cost: number;
-  lighterage_tonnage: number;
-  lighterage_cost: number;
-  spot_voyage_total: number;
-  cvc_voyage_total: number;
-  voyage_savings: number;
-  p10_spot_rate: number;
-  p90_spot_rate: number;
-}
-
-export interface EvaluationResult {
-  cargo_tonnage: number;
-  num_voyages: number;
-  cvc_discount_pct: number;
-  is_cvc_favorable: boolean;
-  locked_cvc_rate: number;
-  average_spot_rate: number;
-  spot_total_usd: number;
-  cvc_total_usd: number;
-  base_case_delta_usd: number;
-  base_case_delta_inr: number;
-  base_case_delta_cr: number;
-  breakeven_spot_rate: number;
-  breakeven_probability_pct: number;
-  headline_summary: string;
-  p10_spot_total_usd: number;
-  p90_spot_total_usd: number;
-  p10_rates: number[];
-  p50_rates: number[];
-  p90_rates: number[];
-  voyages: VoyageBreakdown[];
-  lighterage_plan: LighterageResponse;
-}
-
-export interface PortResponse {
-  code: string;
-  name: string;
-  country: string;
-  is_indian_hub: boolean;
-  max_draft: number;
-  max_loa: number;
-  max_beam: number;
-  discharge_rate: number;
-  load_rate: number;
-  is_anchorage: boolean;
-  latitude: number;
-  longitude: number;
-}
-
-// ─── API functions ────────────────────────────────────────────────────────────
-
-export async function fetchPorts(): Promise<PortResponse[]> {
-  const res = await fetch(`${API_BASE}/api/ports`);
-  if (!res.ok) {
-    throw new Error(`Failed to fetch ports: ${res.status} ${res.statusText}`);
+  constructor(message: string, status?: number) {
+    super(message);
+    this.name = 'ApiError';
+    this.status = status;
   }
-  return res.json();
 }
 
-export async function evaluate(request: EvaluationRequest): Promise<EvaluationResult> {
-  const res = await fetch(`${API_BASE}/api/evaluate`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(request),
-  });
-
-  if (!res.ok) {
-    const err = await res.json().catch(() => ({ detail: res.statusText }));
-    throw new Error(err.detail || `Evaluation failed: ${res.status}`);
+async function request<T>(path: string, init?: RequestInit): Promise<T> {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), TIMEOUT_MS);
+  try {
+    const res = await fetch(`${API_BASE}${path}`, {
+      ...init,
+      signal: controller.signal,
+      headers: { 'Content-Type': 'application/json', ...(init?.headers ?? {}) },
+    });
+    if (!res.ok) {
+      throw new ApiError(`${path} returned ${res.status}`, res.status);
+    }
+    return (await res.json()) as T;
+  } catch (err) {
+    if (err instanceof ApiError) throw err;
+    const reason = err instanceof Error && err.name === 'AbortError'
+      ? `timed out after ${TIMEOUT_MS / 1000}s`
+      : err instanceof Error ? err.message : 'unreachable';
+    throw new ApiError(`${path}: ${reason}`);
+  } finally {
+    clearTimeout(timer);
   }
-  return res.json();
 }
 
-// ─── Helpers ──────────────────────────────────────────────────────────────────
+export function apiGet<T>(path: string): Promise<T> {
+  return request<T>(path);
+}
 
-/** Maps time horizon in months to num_voyages. */
-export function horizonToVoyages(months: 1 | 3 | 6): number {
-  const map: Record<number, number> = { 1: 1, 3: 4, 6: 8 };
-  return map[months] ?? 4;
+export function apiPost<T>(path: string, body: unknown): Promise<T> {
+  return request<T>(path, { method: 'POST', body: JSON.stringify(body) });
 }

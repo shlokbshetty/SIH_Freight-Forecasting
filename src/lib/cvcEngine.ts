@@ -217,7 +217,7 @@ export function assessLighterage(
 
   const none: LighterageAssessment = {
     required: false,
-    reason: `${vesselClass} floats at ${draft.toFixed(1)} m on ${cargoTonnes.toLocaleString('en-IN')} T — inside ${port.name}'s ${permissible.toFixed(1)} m permissible draft.`,
+    reason: `${vesselClass} floats at ${draft.toFixed(1)} m on ${cargoTonnes.toLocaleString('en-US')} T — inside ${port.name}'s ${permissible.toFixed(1)} m permissible draft.`,
     tonnesToLighten: 0,
     extraDays: 0,
     costPerVoyageUsd: 0,
@@ -236,8 +236,8 @@ export function assessLighterage(
   const costPerVoyageUsd = tonnesToLighten * LIGHTERAGE_USD_PER_MT + LIGHTERAGE_MOB_USD;
 
   const reason = port.lighterageRequired
-    ? `${port.name} is an anchorage — ${Math.round(tonnesToLighten).toLocaleString('en-IN')} T must be transhipped to barges before the balance moves upriver.`
-    : `${vesselClass} floats at ${draft.toFixed(1)} m against ${port.name}'s ${permissible.toFixed(1)} m permissible draft — ${shortfallM.toFixed(1)} m over, so ${Math.round(tonnesToLighten).toLocaleString('en-IN')} T lightens at Sagar/Sandheads.`;
+    ? `${port.name} is an anchorage — ${Math.round(tonnesToLighten).toLocaleString('en-US')} T must be transhipped to barges before the balance moves upriver.`
+    : `${vesselClass} floats at ${draft.toFixed(1)} m against ${port.name}'s ${permissible.toFixed(1)} m permissible draft — ${shortfallM.toFixed(1)} m over, so ${Math.round(tonnesToLighten).toLocaleString('en-US')} T lightens at Sagar/Sandheads.`;
 
   return { required: true, reason, tonnesToLighten, extraDays, costPerVoyageUsd };
 }

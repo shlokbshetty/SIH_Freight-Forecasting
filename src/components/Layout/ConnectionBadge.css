@@ -1,0 +1,19 @@
+.conn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.28rem 0.6rem;
+  border-radius: var(--radius);
+  font-size: 0.7rem;
+  font-weight: 600;
+  border: 1px solid var(--rule-strong);
+  color: var(--chalk-dim);
+  white-space: nowrap;
+  transition: background var(--transition), color var(--transition);
+}
+
+.conn:hover { background: var(--deck); color: var(--chalk); }
+
+.conn--live    { color: var(--sig-green); border-color: rgba(61,220,132,0.25); background: var(--sig-green-dim); }
+.conn--stale   { color: var(--sig-amber); border-color: rgba(240,165,0,0.25);  background: var(--sig-amber-dim); }
+.conn--offline { color: var(--sig-amber); border-color: rgba(240,165,0,0.25);  background: var(--sig-amber-dim); }

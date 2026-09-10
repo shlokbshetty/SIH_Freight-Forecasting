@@ -1,7 +1,8 @@
 import { useLocation } from 'react-router-dom';
 import { useEffect, useState } from 'react';
-import { Bell, Clock, Sun, Moon } from 'lucide-react';
+import { Bell, Clock, Moon, Sun } from 'lucide-react';
 import { useTheme } from '../../store/themeStore';
+import ConnectionBadge from './ConnectionBadge';
 import './Header.css';
 
 const ROUTE_META: Record<string, { title: string; sub: string }> = {
@@ -10,7 +11,9 @@ const ROUTE_META: Record<string, { title: string; sub: string }> = {
   '/forecast':  { title: 'Freight Forecast',   sub: 'Rate prediction with confidence bands' },
   '/matcher':   { title: 'Vessel Matcher',     sub: 'Cargo & port compatibility engine' },
   '/contracts': { title: 'Contract Simulator', sub: 'Spot vs CVC cost comparison' },
-  '/risk':      { title: 'Risk & Alerts',      sub: 'Market disruption & port delay monitoring' },
+  '/timing':    { title: 'Market Entry Timing', sub: 'When to fix, and what waiting costs' },
+  '/idle':      { title: 'Idle & Repositioning', sub: 'Ballast legs, turnaround and redeployment' },
+  '/risk':      { title: 'Risk & Data Health',  sub: 'Disruptions, port delays and source freshness' },
 };
 
 export default function Header() {
@@ -63,11 +66,8 @@ export default function Header() {
           <span className="app-header__bell-dot" />
         </button>
 
-        {/* Status badge */}
-        <div className="app-header__status">
-          <span className="dot dot-green" />
-          <span>Live</span>
-        </div>
+        {/* Where the numbers are coming from */}
+        <ConnectionBadge />
       </div>
     </header>
   );

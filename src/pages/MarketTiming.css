@@ -1,0 +1,145 @@
+.timing-page { display: flex; flex-direction: column; gap: 0.85rem; }
+
+.timing-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+.timing-head h1 { font-size: 1rem; font-weight: 600; }
+.timing-head p  { font-size: 0.75rem; color: var(--chalk-dim); margin-top: 0.15rem; }
+.timing-controls { display: flex; gap: 0.35rem; flex-wrap: wrap; }
+
+/* ── Verdict ────────────────────────────────────────── */
+.timing-verdict {
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+  padding: 0.7rem 1rem;
+  border-radius: var(--radius);
+  font-size: 0.85rem;
+  line-height: 1.45;
+  border: 1px solid var(--rule);
+}
+.timing-verdict svg { flex-shrink: 0; }
+.timing-verdict b { font-family: var(--font-mono); font-weight: 600; }
+.timing-verdict--green { background: var(--sig-green-dim); border-color: rgba(61,220,132,0.25); color: var(--chalk); }
+.timing-verdict--green svg { color: var(--sig-green); }
+.timing-verdict--amber { background: var(--sig-amber-dim); border-color: rgba(240,165,0,0.25); color: var(--chalk); }
+.timing-verdict--amber svg { color: var(--sig-amber); }
+.timing-verdict--red   { background: var(--sig-red-dim);   border-color: rgba(224,92,92,0.25); color: var(--chalk); }
+.timing-verdict--red svg { color: var(--sig-red); }
+
+/* ── Calendar ───────────────────────────────────────── */
+.timing-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(96px, 1fr));
+  gap: 0.4rem;
+}
+
+.timing-cell {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 0.55rem 0.6rem;
+  border-radius: var(--radius);
+  border: 1px solid var(--rule);
+  background: var(--water);
+  cursor: pointer;
+  text-align: left;
+  font-family: var(--font-ui);
+  transition: border-color var(--transition), background var(--transition);
+}
+.timing-cell:hover { background: var(--deck); }
+.timing-cell--selected { border-color: var(--chalk-dim); background: var(--deck); }
+
+.timing-cell--green { border-left: 3px solid var(--sig-green); }
+.timing-cell--amber { border-left: 3px solid var(--sig-amber); }
+.timing-cell--red   { border-left: 3px solid var(--sig-red); }
+
+.timing-cell__label { font-size: 0.6rem; color: var(--chalk-faint); }
+.timing-cell__rate  { font-size: 0.82rem; font-weight: 600; color: var(--chalk); }
+.timing-cell__delta { font-size: 0.6rem; color: var(--chalk-dim); }
+
+.timing-legend { display: flex; gap: 1rem; flex-wrap: wrap; margin-top: 0.7rem; }
+.timing-legend__item {
+  display: inline-flex; align-items: center; gap: 0.35rem;
+  font-size: 0.66rem; color: var(--chalk-dim);
+}
+.timing-swatch { width: 9px; height: 9px; border-radius: 2px; }
+.timing-swatch--green { background: var(--sig-green); }
+.timing-swatch--amber { background: var(--sig-amber); }
+.timing-swatch--red   { background: var(--sig-red); }
+
+.timing-detail {
+  margin-top: 0.75rem;
+  padding-top: 0.65rem;
+  border-top: 1px solid var(--rule);
+}
+.timing-detail__head {
+  display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap;
+  margin-bottom: 0.35rem;
+}
+.timing-detail__head b { font-size: 0.8rem; color: var(--chalk); }
+.timing-detail__head span.mono { font-size: 0.65rem; color: var(--chalk-faint); }
+.timing-detail p { font-size: 0.76rem; color: var(--chalk-dim); line-height: 1.5; }
+.timing-detail__band { font-size: 0.62rem; color: var(--chalk-faint); margin-top: 0.3rem; }
+
+/* ── Lower row ──────────────────────────────────────── */
+.timing-lower { display: grid; grid-template-columns: 1.2fr 1fr; gap: 0.75rem; }
+.timing-chart { height: 210px; width: 100%; }
+
+.timing-delay__head {
+  display: flex; align-items: flex-end; justify-content: space-between;
+  gap: 1rem; flex-wrap: wrap; margin-bottom: 0.6rem;
+}
+.timing-delay__head .card-title { margin-bottom: 0; }
+.timing-delay__inputs {
+  display: grid;
+  grid-template-columns: auto 6rem auto 3.5rem;
+  align-items: center;
+  gap: 0.35rem;
+}
+.timing-delay__inputs .label { margin-bottom: 0; white-space: nowrap; }
+.timing-delay__inputs .input { padding: 0.3rem 0.45rem; font-size: 0.72rem; }
+
+.timing-table { width: 100%; border-collapse: collapse; font-size: 0.76rem; }
+.timing-table th {
+  padding: 0.35rem 0.5rem; text-align: left;
+  font-size: 0.6rem; font-weight: 600; color: var(--chalk-faint);
+  border-bottom: 1px solid var(--rule-strong);
+}
+.timing-table th.timing-num, .timing-table td.timing-num { text-align: right; }
+.timing-table td { padding: 0.4rem 0.5rem; border-bottom: 1px solid var(--rule); color: var(--chalk-dim); }
+.timing-table tr:last-child td { border-bottom: none; }
+.timing-table__now td { color: var(--chalk); font-weight: 600; }
+
+.timing-delay__note {
+  margin-top: 0.7rem; padding-top: 0.55rem; border-top: 1px solid var(--rule);
+  font-size: 0.63rem; color: var(--chalk-faint); line-height: 1.55;
+}
+
+.timing-footnote {
+  font-size: 0.66rem;
+  line-height: 1.6;
+  padding-top: 0.6rem;
+  border-top: 1px solid var(--rule);
+}
+
+@media (max-width: 980px) {
+  .timing-lower { grid-template-columns: 1fr; }
+}
+
+.timing-curve .card-title {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+.timing-curve__today {
+  font-size: 0.62rem;
+  font-weight: 400;
+  color: var(--chalk-faint);
+  letter-spacing: 0;
+}

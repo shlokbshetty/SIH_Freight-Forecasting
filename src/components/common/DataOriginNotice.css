@@ -1,0 +1,20 @@
+.origin {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  padding: 0.4rem 0.75rem;
+  border-radius: var(--radius);
+  font-size: 0.7rem;
+  line-height: 1.4;
+  border: 1px solid var(--rule);
+  flex-shrink: 0;
+}
+
+.origin svg { flex-shrink: 0; }
+
+.origin--live    { color: var(--chalk-faint); background: transparent; }
+.origin--stale   { color: var(--sig-amber); background: var(--sig-amber-dim); border-color: rgba(240,165,0,0.22); }
+.origin--bundled { color: var(--sig-amber); background: var(--sig-amber-dim); border-color: rgba(240,165,0,0.22); }
+
+.origin b  { font-family: var(--font-mono); font-weight: 600; }
+.origin__detail { color: var(--chalk-faint); font-style: normal; opacity: 0.8; }
