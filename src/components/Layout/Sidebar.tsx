@@ -3,7 +3,6 @@ import { NavLink, useLocation } from 'react-router-dom';
 import {
   LayoutDashboard, Map, TrendingUp, Anchor,
   FileText, AlertTriangle, ChevronLeft, ChevronRight,
-  Waves,
 } from 'lucide-react';
 import './Sidebar.css';
 
@@ -31,15 +30,15 @@ export default function Sidebar() {
 
   return (
     <aside className={`sidebar ${collapsed ? 'sidebar--collapsed' : ''}`}>
-      {/* Logo */}
+      {/* Wordmark */}
       <div className="sidebar__logo">
-        <div className="sidebar__logo-icon">
-          <Waves size={20} />
+        <div className="sidebar__logo-mark">
+          <Anchor size={20} color="var(--copper)" strokeWidth={1.5} />
         </div>
         {!collapsed && (
           <div className="sidebar__logo-text">
             <span className="sidebar__logo-name">FreightIQ</span>
-            <span className="sidebar__logo-sub">Freight Intelligence</span>
+            <span className="sidebar__logo-sub">Vessel Intelligence</span>
           </div>
         )}
       </div>
