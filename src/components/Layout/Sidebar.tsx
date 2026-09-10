@@ -1,19 +1,21 @@
 import { useState, useEffect } from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
 import {
-  AlertTriangle, Anchor, CalendarClock, ChevronLeft, ChevronRight, FileText, LayoutDashboard, Map, Route, TrendingUp,
+  AlertTriangle, Anchor, CalendarClock, Calculator, ChevronLeft, ChevronRight,
+  FileText, LayoutDashboard, Map, Route, TrendingUp,
 } from 'lucide-react';
 import './Sidebar.css';
 
 const NAV_ITEMS = [
   { path: '/',           label: 'Command Center',    icon: LayoutDashboard },
   { path: '/map',        label: 'Route Map',          icon: Map             },
+  { path: '/evaluate',   label: 'Evaluate (CVC)',     icon: Calculator      },
   { path: '/forecast',   label: 'Forecast',           icon: TrendingUp      },
   { path: '/matcher',    label: 'Vessel Matcher',     icon: Anchor          },
   { path: '/contracts',  label: 'Contract Simulator', icon: FileText        },
   { path: '/timing',     label: 'Market Timing',      icon: CalendarClock   },
   { path: '/idle',       label: 'Idle & Ballast',     icon: Route           },
-  { path: '/risk',       label: 'Risk & Data Health',      icon: AlertTriangle   },
+  { path: '/risk',       label: 'Risk & Data Health', icon: AlertTriangle   },
 ] as const;
 
 export default function Sidebar() {

@@ -41,6 +41,9 @@ CVC_BAF_HEDGE = 0.7
 TONNES_PER_CM = resolver.TONNES_PER_CM
 UKC_MARGIN_M = resolver.UKC_MARGIN_M
 
+#: Default demurrage exposure when a caller does not state one, USD per day.
+DEFAULT_DEMURRAGE_USD_PER_DAY = 22_000.0
+
 SPOT_WAIT_DAYS = {"low": 1.2, "medium": 2.9, "high": 5.4}
 CVC_WAIT_REDUCTION = 0.45
 FIXED_TURNAROUND_DAYS = 2.0

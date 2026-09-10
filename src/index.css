@@ -53,6 +53,45 @@
 }
 
 /* =========================================================
+   Light mode — [data-theme="light"] on <html>
+   ========================================================= */
+[data-theme="light"] {
+  /* Surfaces — reversed: light sky → white cards */
+  --water:          #f0f4f8;
+  --hull:           #ffffff;
+  --deck:           #f5f7fa;
+  --deck-raised:    #eaecf0;
+  --rule:           rgba(0,0,0,0.07);
+  --rule-strong:    rgba(0,0,0,0.14);
+
+  /* Copper stays — it's the brand accent */
+  --copper:         #b06a32;
+  --copper-dim:     rgba(176,106,50,0.12);
+  --copper-rule:    rgba(176,106,50,0.3);
+
+  /* Signal colours — slightly deeper for contrast on white */
+  --sig-green:      #1a9e5c;
+  --sig-green-dim:  rgba(26,158,92,0.10);
+  --sig-amber:      #c47f00;
+  --sig-amber-dim:  rgba(196,127,0,0.10);
+  --sig-red:        #c0392b;
+  --sig-red-dim:    rgba(192,57,43,0.10);
+  --sig-blue:       #2563eb;
+  --sig-blue-dim:   rgba(37,99,235,0.10);
+
+  /* Text — dark ink on light paper */
+  --chalk:          #111827;
+  --chalk-dim:      #4b5563;
+  --chalk-faint:    #9ca3af;
+}
+
+/* Smooth transition when switching theme */
+html {
+  transition: background-color 0.25s ease, color 0.25s ease;
+}
+
+
+/* =========================================================
    Reset
    ========================================================= */
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -329,6 +368,7 @@ h3 { font-family: var(--font-ui); font-size: 0.85rem; font-weight: 600; color: v
   font-family: var(--font-ui) !important;
 }
 .leaflet-tile-pane { filter: brightness(0.4) saturate(0.22) contrast(1.1); }
+[data-theme="light"] .leaflet-tile-pane { filter: none; }
 .leaflet-popup-content-wrapper {
   background: var(--hull) !important;
   border: 1px solid var(--rule-strong) !important;

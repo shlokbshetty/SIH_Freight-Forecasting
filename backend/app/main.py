@@ -23,7 +23,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from app import config
 from app.deps import AppState, snapshot_provenance
-from app.routers import contract, forecast, match, ports, series, status
+from app.routers import contract, evaluate, forecast, match, ports, series, status
 
 logging.basicConfig(
     level=logging.INFO,
@@ -149,6 +149,7 @@ app.include_router(ports.router)
 app.include_router(match.router)
 app.include_router(forecast.router)
 app.include_router(contract.router)
+app.include_router(evaluate.router)
 app.include_router(series.router)
 app.include_router(status.router)
 
