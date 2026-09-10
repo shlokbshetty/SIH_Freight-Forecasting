@@ -2,13 +2,14 @@ import { useState, useEffect } from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
 import {
   LayoutDashboard, Map, TrendingUp, Anchor,
-  FileText, AlertTriangle, ChevronLeft, ChevronRight,
+  FileText, AlertTriangle, ChevronLeft, ChevronRight, Calculator,
 } from 'lucide-react';
 import './Sidebar.css';
 
 const NAV_ITEMS = [
   { path: '/',           label: 'Command Center',    icon: LayoutDashboard },
   { path: '/map',        label: 'Route Map',          icon: Map             },
+  { path: '/evaluate',   label: 'Evaluate (CVC)',     icon: Calculator      },
   { path: '/forecast',   label: 'Forecast',           icon: TrendingUp      },
   { path: '/matcher',    label: 'Vessel Matcher',     icon: Anchor          },
   { path: '/contracts',  label: 'Contract Simulator', icon: FileText        },
