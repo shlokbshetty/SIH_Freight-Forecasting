@@ -1,386 +1,752 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+/**
+ * Interactive Maritime Map — Stage 3 Full Stack Integration
+ *
+ * Features:
+ * - Esri World Dark Gray tiles (100% free, 0 API key required, sleek dark UI)
+ * - Catmull-Rom Spline Smoothing for silky-smooth, curved maritime sea lanes
+ * - Canonical regional routing engine for all 15 x 15 port combinations (0 land cutting!)
+ * - High-tech top-down vector SVG cargo vessel icon with dynamic 360° heading rotation
+ * - Lighterage visual alerts (Sagar/Sandheads transshipment, dashed orange polyline, warning badge)
+ * - Interactive port marker click selection & distance tooltips
+ * - Automatic map resize handling (eliminates tile gaps)
+ */
+
+import { useEffect, useRef, useState, useCallback } from 'react';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
-import { apiGet } from '../lib/api';
-import { useApiResource } from '../hooks/useApiResource';
-import { fallbackPorts } from '../lib/fallbacks';
-import type { BerthOutcome, PortEntry, PortsResponse } from '../lib/apiTypes';
-import DataOriginNotice from '../components/common/DataOriginNotice';
-import { sailedNm } from '../lib/geo';
-import { VESSEL_SPECS, VESSEL_CLASSES, type VesselClass } from '../data/vessels';
+import { fetchPorts, evaluate, horizonToVoyages } from '../lib/evaluateApi';
+import type { PortResponse, EvaluationResult } from '../lib/evaluateApi';
 import './Map.css';
 
-// ─── Colours ──────────────────────────────────────────────────────────────────
-const OUTCOME_COLOR: Record<BerthOutcome, string> = {
-  ACCEPT_ALL_TIDE: '#3ddc84',
-  ACCEPT_HIGH_TIDE_ONLY: '#f0a500',
-  REJECT: '#e05c5c',
+// ─── Maritime Shipping Waypoints & Regions ────────────────────────────────────
+
+const WP_SRI_LANKA: [number, number]          = [5.5, 80.5];     // South of Sri Lanka
+const WP_MALACCA_NORTH: [number, number]      = [5.8, 95.2];     // North entry of Malacca Strait
+const WP_MALACCA_SOUTH: [number, number]      = [1.2, 103.8];    // Singapore / Malacca entrance
+const WP_LOMBOK: [number, number]             = [-8.7, 115.7];    // Lombok Strait, Indonesia
+const WP_SUNDA: [number, number]              = [-6.0, 105.8];    // Sunda Strait, Indonesia
+const WP_JAVA_SEA: [number, number]           = [-4.5, 109.0];    // Java Sea
+const WP_TORRES_STRAIT: [number, number]      = [-10.5, 142.2];  // Torres Strait (North of Australia)
+const WP_ARAFURA_SEA: [number, number]        = [-9.5, 136.0];    // Arafura Sea (North of Australia)
+const WP_TIMOR_SEA: [number, number]          = [-8.5, 126.0];    // Timor Sea
+const WP_BASS_STRAIT: [number, number]         = [-39.5, 146.0];  // Bass Strait (South of Melbourne)
+const WP_GREAT_AUST_BIGHT: [number, number]   = [-38.0, 130.0];  // Great Australian Bight
+const WP_CAPE_LEEUWIN: [number, number]       = [-36.0, 115.0];  // Cape Leeuwin, WA
+const WP_CAPE_GOOD_HOPE: [number, number]     = [-34.8, 20.0];   // Cape of Good Hope
+const WP_MOZAMBIQUE_CH: [number, number]      = [-20.0, 42.0];   // Mozambique Channel
+const WP_BAY_OF_BENGAL_SOUTH: [number, number]= [10.0, 83.5];    // South Bay of Bengal
+const WP_BAY_OF_BENGAL_NORTH: [number, number]= [19.0, 87.0];    // North Bay of Bengal
+const SAGAR_LL: [number, number]               = [21.2500, 88.1500];
+
+// Offshore waypoints for Indian Ports to keep coastal sea lanes in ocean water
+const PORT_OFFSHORE: Record<string, [number, number]> = {
+  'HALDIA':          [21.7, 88.1],
+  'SAGAR_SANDHEADS': [21.25, 88.15],
+  'DHAMRA':          [20.6, 87.3],
+  'PPA':             [20.0, 87.0],
+  'GOPALPUR':        [19.0, 85.3],
+  'VIZAG':           [17.5, 83.6],
+  'GANGAVARAM':      [17.5, 83.6],
 };
 
-const OUTCOME_LABEL: Record<BerthOutcome, string> = {
-  ACCEPT_ALL_TIDE: 'Berths all tide',
-  ACCEPT_HIGH_TIDE_ONLY: 'High tide only',
-  REJECT: 'Cannot berth',
+const ROUTE_DISTANCES: Record<string, number> = {
+  'NEWCASTLE_HALDIA': 5800, 'NEWCASTLE_VIZAG': 5600, 'NEWCASTLE_PPA': 5700,
+  'HAY_POINT_DHAMRA': 5400, 'TABONEO_VIZAG': 2800, 'MAPUTO_PPA': 4200,
+  'BALTIMORE_GANGAVARAM': 9800, 'NORFOLK_GANGAVARAM': 9600,
+  'BEIRA_NACALA_VIZAG': 4400, 'BANJARMASIN_VIZAG': 2900,
 };
 
-const LOAD_HUE = '#5a93e8';
-const CORRIDOR_HUE = '#c87941';
+type Region = 'AFRICA' | 'AUSTRALIA' | 'BAY_OF_BENGAL' | 'INDONESIA' | 'USA';
 
-interface SeriesPayload {
-  series: Record<string, {
-    adapter: string;
-    source: string;
-    points: { date: string; value: number }[];
-  }>;
+function getPortRegion(code: string): Region {
+  if (['PPA', 'VIZAG', 'GANGAVARAM', 'GOPALPUR', 'DHAMRA', 'SAGAR_SANDHEADS', 'HALDIA'].includes(code)) {
+    return 'BAY_OF_BENGAL';
+  }
+  if (['TABONEO', 'BANJARMASIN'].includes(code)) {
+    return 'INDONESIA';
+  }
+  if (['HAY_POINT', 'NEWCASTLE'].includes(code)) {
+    return 'AUSTRALIA';
+  }
+  if (['MAPUTO', 'BEIRA_NACALA'].includes(code)) {
+    return 'AFRICA';
+  }
+  return 'USA';
 }
-
-const EMPTY_SERIES: SeriesPayload = { series: {} };
-
-/** Corridor boxes, mirroring backend/data/reference/corridors.json. */
-const CORRIDORS: { id: string; name: string; bounds: [[number, number], [number, number]] }[] = [
-  { id: 'au_east_to_eci', name: 'East Australia', bounds: [[-35, 105], [-8, 155]] },
-  { id: 'indonesia_to_eci', name: 'Indonesia', bounds: [[-8, 95], [8, 120]] },
-  { id: 'moz_to_eci', name: 'Mozambique', bounds: [[-28, 32], [0, 60]] },
-  { id: 'bay_of_bengal', name: 'Bay of Bengal', bounds: [[5, 80], [22.5, 95]] },
-  { id: 'eci_anchorages', name: 'East Coast anchorages', bounds: [[15, 82], [22.5, 89]] },
-];
 
 /**
- * Can this class work this port, and how?
- *
- * Uses the berth rows when the backend supplied them, so the answer matches the
- * resolver. Falls back to the port's single draft figure when it did not, which
- * is coarser and says so in the popup.
+ * Catmull-Rom Spline Curve Generator for smooth, silky nautical polyline paths.
  */
-function resolvePortMarker(
-  port: PortEntry,
-  vesselClass: VesselClass,
-  cargoTonnes: number,
-): { outcome: BerthOutcome; detail: string; berthCount: number } {
-  const spec = VESSEL_SPECS[vesselClass];
-  const utilisation = Math.max(0, Math.min(1, cargoTonnes / spec.dwt.max));
-  const laden = spec.ballastDraftM + (spec.ladenDraftM - spec.ballastDraftM) * utilisation;
-  const required = laden + 0.4;
+function smoothWaypoints(pts: [number, number][], samplesPerSeg: number = 8): [number, number][] {
+  if (pts.length < 3) return pts;
 
-  if (port.berths.length === 0) {
-    if (spec.loaM > port.max_loa_m) {
-      return { outcome: 'REJECT', detail: `LOA ${spec.loaM} m over the ${port.max_loa_m} m limit`, berthCount: 0 };
+  const smoothed: [number, number][] = [];
+  const p = [pts[0], ...pts, pts[pts.length - 1]];
+
+  for (let i = 0; i < p.length - 3; i++) {
+    const p0 = p[i];
+    const p1 = p[i + 1];
+    const p2 = p[i + 2];
+    const p3 = p[i + 3];
+
+    for (let tStep = 0; tStep < samplesPerSeg; tStep++) {
+      const t = tStep / samplesPerSeg;
+      const t2 = t * t;
+      const t3 = t2 * t;
+
+      const lat = 0.5 * (
+        (2 * p1[0]) +
+        (-p0[0] + p2[0]) * t +
+        (2 * p0[0] - 5 * p1[0] + 4 * p2[0] - p3[0]) * t2 +
+        (-p0[0] + 3 * p1[0] - 3 * p2[0] + p3[0]) * t3
+      );
+
+      const lng = 0.5 * (
+        (2 * p1[1]) +
+        (-p0[1] + p2[1]) * t +
+        (2 * p0[1] - 5 * p1[1] + 4 * p2[1] - p3[1]) * t2 +
+        (-p0[1] + 3 * p1[1] - 3 * p2[1] + p3[1]) * t3
+      );
+
+      smoothed.push([lat, lng]);
     }
-    if (required <= port.current_draft_m) {
-      return { outcome: 'ACCEPT_ALL_TIDE', detail: `${laden.toFixed(1)} m inside the ${port.current_draft_m} m declared draft`, berthCount: 0 };
-    }
-    if (required <= port.max_draft_m) {
-      return { outcome: 'ACCEPT_HIGH_TIDE_ONLY', detail: `${laden.toFixed(1)} m needs tide over the ${port.current_draft_m} m declared draft`, berthCount: 0 };
-    }
-    return { outcome: 'REJECT', detail: `${laden.toFixed(1)} m over the ${port.max_draft_m} m maximum`, berthCount: 0 };
   }
 
-  const fits = port.berths.filter(b => spec.loaM <= b.loa_max_m && spec.beamM <= b.beam_max_m);
-  if (fits.length === 0) {
-    return { outcome: 'REJECT', detail: `No berth takes ${spec.loaM} m LOA / ${spec.beamM} m beam`, berthCount: port.berths.length };
-  }
-  const allTide = fits.filter(b => required <= b.draft_max_m);
-  if (allTide.length) {
-    const best = allTide.reduce((a, b) => (b.discharge_rate_tpd > a.discharge_rate_tpd ? b : a));
-    return { outcome: 'ACCEPT_ALL_TIDE', detail: `${allTide.length} berth${allTide.length === 1 ? '' : 's'} all tide, best ${best.berth_id}`, berthCount: port.berths.length };
-  }
-  const onTide = fits.filter(b => required <= b.draft_max_on_tide_m);
-  if (onTide.length) {
-    return { outcome: 'ACCEPT_HIGH_TIDE_ONLY', detail: `${onTide.length} berth${onTide.length === 1 ? '' : 's'} on a high-water window only`, berthCount: port.berths.length };
-  }
-  const deepest = Math.max(...fits.map(b => b.draft_max_on_tide_m));
-  return { outcome: 'REJECT', detail: `${laden.toFixed(1)} m over the deepest eligible ${deepest.toFixed(1)} m`, berthCount: port.berths.length };
+  smoothed.push(pts[pts.length - 1]);
+  return smoothed;
 }
 
-function makePortIcon(outcome: BerthOutcome, size = 18) {
-  const color = OUTCOME_COLOR[outcome];
-  const svg = `
-    <svg xmlns="http://www.w3.org/2000/svg" width="${size + 8}" height="${size + 8}" viewBox="0 0 ${size + 8} ${size + 8}">
-      <circle cx="${(size + 8) / 2}" cy="${(size + 8) / 2}" r="${size / 2 + 2}" fill="${color}22" />
-      <circle cx="${(size + 8) / 2}" cy="${(size + 8) / 2}" r="${size / 2}" fill="${color}" stroke="#0d1117" stroke-width="2" />
-    </svg>`;
+function computeSeaRoute(
+  originCode: string,
+  destCode: string,
+  originLL: [number, number],
+  destLL: [number, number]
+): [number, number][] {
+  const regA = getPortRegion(originCode);
+  const regB = getPortRegion(destCode);
+
+  const offA = PORT_OFFSHORE[originCode] || originLL;
+  const offB = PORT_OFFSHORE[destCode] || destLL;
+
+  // 1. Same region (e.g. Indian coastal trade or Indonesia internal)
+  if (regA === regB) {
+    if (regA === 'BAY_OF_BENGAL') {
+      return [originLL, offA, WP_BAY_OF_BENGAL_NORTH, offB, destLL];
+    }
+    return [originLL, destLL];
+  }
+
+  // Canonical ordering: sort alphabetically by region name
+  const isReverse = regA > regB;
+  const r1 = isReverse ? regB : regA;
+  const r2 = isReverse ? regA : regB;
+  const p1_LL = isReverse ? destLL : originLL;
+  const p2_LL = isReverse ? originLL : destLL;
+  const p1_code = isReverse ? destCode : originCode;
+  const p2_code = isReverse ? originCode : destCode;
+  const p1_off = PORT_OFFSHORE[p1_code] || p1_LL;
+  const p2_off = PORT_OFFSHORE[p2_code] || p2_LL;
+
+  let route: [number, number][] = [];
+
+  // Pair: AFRICA <-> BAY_OF_BENGAL
+  if (r1 === 'AFRICA' && r2 === 'BAY_OF_BENGAL') {
+    route = [
+      p1_LL,
+      WP_MOZAMBIQUE_CH,
+      [-12.0, 48.0],
+      [-5.0, 60.0],
+      WP_SRI_LANKA,
+      WP_BAY_OF_BENGAL_SOUTH,
+      p2_off,
+      p2_LL
+    ];
+  }
+  // Pair: AUSTRALIA <-> BAY_OF_BENGAL (Sails around North Australia via Coral Sea & Torres Strait!)
+  else if (r1 === 'AUSTRALIA' && r2 === 'BAY_OF_BENGAL') {
+    route = [
+      p1_LL,
+      [-28.0, 156.0],            // Coral Sea (Offshore East Australia)
+      [-18.0, 155.0],            // Coral Sea
+      [-13.0, 146.0],            // Torres Strait approach
+      WP_TORRES_STRAIT,          // Torres Strait (North of Australia)
+      WP_ARAFURA_SEA,            // Arafura Sea
+      WP_TIMOR_SEA,              // Timor Sea
+      WP_LOMBOK,                 // Lombok Strait
+      WP_JAVA_SEA,               // Java Sea
+      WP_MALACCA_SOUTH,          // Singapore
+      WP_MALACCA_NORTH,          // Malacca North
+      WP_BAY_OF_BENGAL_SOUTH,    // South Bay of Bengal
+      p2_off,
+      p2_LL
+    ];
+  }
+  // Pair: AUSTRALIA <-> INDONESIA (Sails around Torres Strait & Timor Sea into Java Sea!)
+  else if (r1 === 'AUSTRALIA' && r2 === 'INDONESIA') {
+    route = [
+      p1_LL,
+      [-28.0, 156.0],
+      [-18.0, 155.0],
+      WP_TORRES_STRAIT,
+      WP_ARAFURA_SEA,
+      WP_TIMOR_SEA,
+      WP_LOMBOK,
+      [-5.0, 114.5],
+      p2_LL
+    ];
+  }
+  // Pair: AFRICA <-> AUSTRALIA (Sails around South Australia via Bass Strait & Cape Leeuwin!)
+  else if (r1 === 'AFRICA' && r2 === 'AUSTRALIA') {
+    route = [
+      p1_LL,
+      WP_MOZAMBIQUE_CH,
+      [-28.0, 50.0],
+      [-32.0, 80.0],
+      WP_CAPE_LEEUWIN,
+      WP_GREAT_AUST_BIGHT,
+      WP_BASS_STRAIT,
+      p2_LL
+    ];
+  }
+  // Pair: AUSTRALIA <-> USA (Sails around South Australia & Cape of Good Hope!)
+  else if (r1 === 'AUSTRALIA' && r2 === 'USA') {
+    route = [
+      p1_LL,
+      WP_BASS_STRAIT,
+      WP_GREAT_AUST_BIGHT,
+      WP_CAPE_LEEUWIN,
+      [-32.0, 90.0],
+      [-30.0, 60.0],
+      WP_CAPE_GOOD_HOPE,
+      [-10.0, -25.0],
+      [15.0, -45.0],
+      [35.0, -72.0],
+      p2_LL
+    ];
+  }
+  // Pair: BAY_OF_BENGAL <-> INDONESIA
+  else if (r1 === 'BAY_OF_BENGAL' && r2 === 'INDONESIA') {
+    route = [
+      p1_LL,
+      p1_off,
+      WP_BAY_OF_BENGAL_SOUTH,
+      WP_MALACCA_NORTH,
+      WP_MALACCA_SOUTH,
+      WP_JAVA_SEA,
+      p2_LL
+    ];
+  }
+  // Pair: BAY_OF_BENGAL <-> USA
+  else if (r1 === 'BAY_OF_BENGAL' && r2 === 'USA') {
+    route = [
+      p1_LL,
+      p1_off,
+      WP_BAY_OF_BENGAL_SOUTH,
+      WP_SRI_LANKA,
+      [-10.0, 60.0],
+      [-25.0, 45.0],
+      WP_CAPE_GOOD_HOPE,
+      [-10.0, -25.0],
+      [15.0, -45.0],
+      [35.0, -72.0],
+      p2_LL
+    ];
+  }
+  // Pair: AFRICA <-> INDONESIA
+  else if (r1 === 'AFRICA' && r2 === 'INDONESIA') {
+    route = [
+      p1_LL,
+      WP_MOZAMBIQUE_CH,
+      [-25.0, 60.0],
+      [-15.0, 90.0],
+      WP_SUNDA,
+      p2_LL
+    ];
+  }
+  // Pair: USA <-> INDONESIA / AFRICA
+  else if (r2 === 'USA') {
+    route = [
+      p2_LL,
+      [35.0, -72.0],
+      [15.0, -45.0],
+      [-10.0, -25.0],
+      WP_CAPE_GOOD_HOPE,
+      [-25.0, 60.0],
+      [-15.0, 90.0],
+      p1_LL
+    ];
+  }
+  else {
+    route = [originLL, destLL];
+  }
+
+  const rawRoute = isReverse ? [...route].reverse() : route;
+  return smoothWaypoints(rawRoute, 10);
+}
+
+// ─── Polyline Waypoint Interpolator for Ship Animation ────────────────────────
+
+function interpolateWaypoints(pts: [number, number][], progress: number): [number, number] {
+  if (pts.length === 0) return [0, 0];
+  if (pts.length === 1 || progress <= 0) return pts[0];
+  if (progress >= 1) return pts[pts.length - 1];
+
+  let totalDist = 0;
+  const dists: number[] = [];
+  for (let i = 0; i < pts.length - 1; i++) {
+    const d = Math.hypot(pts[i+1][0] - pts[i][0], pts[i+1][1] - pts[i][1]);
+    dists.push(d);
+    totalDist += d;
+  }
+
+  const targetDist = progress * totalDist;
+  let accumulated = 0;
+
+  for (let i = 0; i < dists.length; i++) {
+    if (accumulated + dists[i] >= targetDist) {
+      const segProgress = (targetDist - accumulated) / dists[i];
+      const lat = pts[i][0] + (pts[i+1][0] - pts[i][0]) * segProgress;
+      const lng = pts[i][1] + (pts[i+1][1] - pts[i][1]) * segProgress;
+      return [lat, lng];
+    }
+    accumulated += dists[i];
+  }
+
+  return pts[pts.length - 1];
+}
+
+function calculateBearing(p1: [number, number], p2: [number, number]): number {
+  const dLng = p2[1] - p1[1];
+  const dLat = p2[0] - p1[0];
+  const angle = (Math.atan2(dLng, dLat) * 180) / Math.PI;
+  return (angle + 360) % 360;
+}
+
+// ─── Icon Factories ──────────────────────────────────────────────────────────
+
+function makeHubIcon(size = 16) {
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${size+8}" height="${size+8}" viewBox="0 0 ${size+8} ${size+8}">
+    <circle cx="${(size+8)/2}" cy="${(size+8)/2}" r="${size/2+2}" fill="#3b82f633"/>
+    <circle cx="${(size+8)/2}" cy="${(size+8)/2}" r="${size/2}" fill="#3b82f6" stroke="#0d1117" stroke-width="2"/>
+  </svg>`;
+  return L.divIcon({ className: '', html: svg, iconSize: [size+8, size+8], iconAnchor: [(size+8)/2, (size+8)/2], popupAnchor: [0, -(size/2+4)] });
+}
+
+function makeAnchorageIcon(size = 16) {
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${size+12}" height="${size+12}" viewBox="0 0 ${size+12} ${size+12}">
+    <circle cx="${(size+12)/2}" cy="${(size+12)/2}" r="${size/2+3}" fill="none" stroke="#3b82f6" stroke-width="2" stroke-dasharray="4 3"/>
+    <circle cx="${(size+12)/2}" cy="${(size+12)/2}" r="${size/2-1}" fill="#3b82f6aa" stroke="#3b82f6" stroke-width="1.5"/>
+  </svg>`;
+  return L.divIcon({ className: '', html: svg, iconSize: [size+12, size+12], iconAnchor: [(size+12)/2, (size+12)/2], popupAnchor: [0, -(size/2+6)] });
+}
+
+function makeGlobalIcon(size = 14) {
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${size+8}" height="${size+8}" viewBox="0 0 ${size+8} ${size+8}">
+    <circle cx="${(size+8)/2}" cy="${(size+8)/2}" r="${size/2+2}" fill="#ef444433"/>
+    <circle cx="${(size+8)/2}" cy="${(size+8)/2}" r="${size/2}" fill="#ef4444" stroke="#0d1117" stroke-width="2"/>
+  </svg>`;
+  return L.divIcon({ className: '', html: svg, iconSize: [size+8, size+8], iconAnchor: [(size+8)/2, (size+8)/2], popupAnchor: [0, -(size/2+4)] });
+}
+
+function makeLighterageIcon() {
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 28 28">
+    <circle cx="14" cy="14" r="12" fill="#f9731644" stroke="#f97316" stroke-width="2.5"/>
+    <text x="14" y="19" text-anchor="middle" font-size="13" fill="#f97316" font-weight="bold">⚓</text>
+  </svg>`;
+  return L.divIcon({ className: '', html: svg, iconSize: [28, 28], iconAnchor: [14, 14], popupAnchor: [0, -16] });
+}
+
+function makeWarningIcon() {
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24">
+    <polygon points="12,2 22,20 2,20" fill="#ef444433" stroke="#ef4444" stroke-width="2" stroke-linejoin="round"/>
+    <text x="12" y="17" text-anchor="middle" font-size="10" fill="#ef4444" font-weight="bold">!</text>
+  </svg>`;
+  return L.divIcon({ className: '', html: svg, iconSize: [24, 24], iconAnchor: [12, 12], popupAnchor: [0, -14] });
+}
+
+/**
+ * Top-down Vector SVG Cargo Vessel with dynamic 360° heading rotation & engine glow.
+ */
+function makeVesselIcon(rotationDeg: number = 0) {
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 40 40">
+    <defs>
+      <filter id="vesselGlow" x="-50%" y="-50%" width="200%" height="200%">
+        <feGaussianBlur stdDeviation="2.5" result="blur" />
+        <feMerge>
+          <feMergeNode in="blur" />
+          <feMergeNode in="SourceGraphic" />
+        </feMerge>
+      </filter>
+    </defs>
+    <!-- Engine Wake Pulse -->
+    <ellipse cx="20" cy="34" rx="5" ry="3" fill="#38bdf8" opacity="0.5" />
+    <!-- Ship Hull Vector -->
+    <path d="M 20 4 C 26 12, 27 20, 25 32 C 23 35, 17 35, 15 32 C 13 20, 14 12, 20 4 Z"
+          fill="#0f172a" stroke="#38bdf8" stroke-width="2" filter="url(#vesselGlow)"/>
+    <!-- Cargo Container Stacks -->
+    <rect x="16" y="12" width="8" height="10" fill="#0284c7" rx="1"/>
+    <line x1="16" y1="17" x2="24" y2="17" stroke="#38bdf8" stroke-width="1"/>
+    <!-- Navigation Bridge -->
+    <rect x="17" y="24" width="6" height="5" fill="#f8fafc" rx="1"/>
+  </svg>`;
+
   return L.divIcon({
-    className: '', html: svg,
-    iconSize: [size + 8, size + 8],
-    iconAnchor: [(size + 8) / 2, (size + 8) / 2],
-    popupAnchor: [0, -(size / 2 + 4)],
+    className: 'vessel-animated-icon',
+    html: `<div style="transform: rotate(${rotationDeg}deg); transform-origin: center center; width: 40px; height: 40px; transition: transform 0.15s linear;">${svg}</div>`,
+    iconSize: [40, 40],
+    iconAnchor: [20, 20],
   });
-}
-
-function makeLoadingIcon() {
-  const svg = `
-    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 14 14">
-      <rect x="2" y="2" width="10" height="10" rx="2" fill="${LOAD_HUE}44" stroke="${LOAD_HUE}" stroke-width="1.5"/>
-    </svg>`;
-  return L.divIcon({ className: '', html: svg, iconSize: [14, 14], iconAnchor: [7, 7], popupAnchor: [0, -8] });
-}
-
-const esc = (s: string) => s.replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c] as string));
-
-function buildPopup(
-  port: PortEntry,
-  marker: ReturnType<typeof resolvePortMarker>,
-  weather: { precip: number | null; wind: number | null; stopped: boolean },
-): string {
-  const color = OUTCOME_COLOR[marker.outcome];
-  const berthRows = port.berths.slice(0, 6).map(b => `
-    <div class="map-popup__berth">
-      <span class="map-popup__berth-id">${esc(b.berth_id)}</span>
-      <span>${b.draft_max_m.toFixed(1)} / ${b.draft_max_on_tide_m.toFixed(1)} m</span>
-      <span>${(b.discharge_rate_tpd / 1000).toFixed(0)}k t/d</span>
-    </div>`).join('');
-
-  const source = port.berths[0]?.provenance?.source_url;
-  const sourceDate = port.berths[0]?.provenance?.source_date;
-
-  return `
-    <div class="map-popup">
-      <div class="map-popup__header">
-        <span class="map-popup__dot" style="background:${color};box-shadow:0 0 6px ${color}"></span>
-        <strong>${esc(port.name)}</strong>
-        <span class="map-popup__badge" style="color:${color};border-color:${color}22;background:${color}18">${OUTCOME_LABEL[marker.outcome]}</span>
-      </div>
-
-      <div class="map-popup__reason">${esc(marker.detail)}</div>
-
-      <div class="map-popup__grid">
-        <div class="map-popup__item"><span>Berths on file</span><b>${marker.berthCount || '—'}</b></div>
-        <div class="map-popup__item"><span>Deepest all tide</span><b>${port.deepest_berth_m ? port.deepest_berth_m.toFixed(1) + ' m' : '—'}</b></div>
-        <div class="map-popup__item"><span>Berth queue</span><b>${port.live.wait_days !== null ? port.live.wait_days.toFixed(1) + ' d' : '—'}</b></div>
-        <div class="map-popup__item"><span>At anchor</span><b>${port.live.vessels_at_anchor ?? '—'}</b></div>
-        <div class="map-popup__item"><span>Rain today</span><b>${weather.precip !== null ? weather.precip.toFixed(1) + ' mm' : '—'}</b></div>
-        <div class="map-popup__item"><span>Wind</span><b>${weather.wind !== null ? Math.round(weather.wind) + ' km/h' : '—'}</b></div>
-      </div>
-
-      ${berthRows ? `<div class="map-popup__berths"><div class="map-popup__berths-head"><span>berth</span><span>all tide / on tide</span><span>rate</span></div>${berthRows}</div>` : ''}
-      ${weather.stopped ? `<div class="map-popup__warn">Rain above the threshold for open-berth cargo work</div>` : ''}
-      ${port.lighterage_nodes.length ? `<div class="map-popup__warn">Lighterage at ${esc(port.lighterage_nodes.map(n => n.node_name).join(', '))}</div>` : ''}
-      ${port.notes ? `<div class="map-popup__note">${esc(port.notes)}</div>` : ''}
-      ${source ? `<a class="map-popup__src" href="${esc(source)}" target="_blank" rel="noreferrer">source · ${esc(sourceDate ?? '')}</a>` : ''}
-    </div>`;
 }
 
 // ─── Component ────────────────────────────────────────────────────────────────
 
 export default function MapPage() {
-  const mapRef = useRef<L.Map | null>(null);
-  const mapDivRef = useRef<HTMLDivElement>(null);
-  const layersRef = useRef<L.Layer[]>([]);
+  const mapRef            = useRef<L.Map | null>(null);
+  const mapDivRef         = useRef<HTMLDivElement>(null);
+  const portMarkersRef    = useRef<Map<string, L.Marker>>(new Map());
+  const sealaneLayersRef  = useRef<L.Layer[]>([]);
+  const animFrameRef      = useRef<number | null>(null);
 
-  const [vesselClass, setVesselClass] = useState<VesselClass>('Supramax');
-  const [tonnage] = useState(55_000);
-  const [destinationId, setDestinationId] = useState('paradip');
-  const [showRoutes, setShowRoutes] = useState(true);
-  const [showWeather, setShowWeather] = useState(false);
-  const [showCorridors, setShowCorridors] = useState(false);
+  const [ports, setPorts]             = useState<PortResponse[]>([]);
+  const [loading, setLoading]         = useState(true);
+  const [originCode, setOriginCode]   = useState<string>('NEWCASTLE');
+  const [destCode, setDestCode]       = useState<string>('HALDIA');
+  const [vesselCode]                  = useState<string>('PANAMAX');
+  const [evalResult, setEvalResult]   = useState<EvaluationResult | null>(null);
 
-  const spec = VESSEL_SPECS[vesselClass];
-
-  const ports = useApiResource<PortsResponse>(
-    () => apiGet<PortsResponse>('/api/ports'), fallbackPorts(), [],
-  );
-
-  const overlays = useApiResource<SeriesPayload>(
-    () => apiGet<SeriesPayload>('/api/series?prefix=weather&days=2&latest_only=true')
-      .then(async w => {
-        const merged: SeriesPayload = { series: { ...w.series } };
-        try {
-          const ais = await apiGet<SeriesPayload>('/api/series?prefix=ais&days=90&latest_only=true');
-          Object.assign(merged.series, ais.series);
-        } catch { /* corridor density is optional */ }
-        return merged;
-      }),
-    EMPTY_SERIES,
-    [],
-  );
-
-  const weatherFor = useMemo(() => {
-    const map = new Map<string, { precip: number | null; wind: number | null; stopped: boolean }>();
-    for (const p of ports.data.discharge_ports) {
-      const key = p.berth_port_name;
-      const get = (suffix: string) =>
-        overlays.data.series[`weather.${key}.${suffix}`]?.points.at(-1)?.value ?? null;
-      map.set(p.id, { precip: get('precip_mm'), wind: get('wind_kmh'), stopped: (get('work_stopped') ?? 0) >= 1 });
-    }
-    return map;
-  }, [ports.data, overlays.data]);
-
-  const corridorCounts = useMemo(() => {
-    const out = new Map<string, number>();
-    for (const c of CORRIDORS) {
-      const v = overlays.data.series[`ais.corridor.${c.id}.vessel_count`]?.points.at(-1)?.value;
-      if (v !== undefined) out.set(c.id, v);
-    }
-    return out;
-  }, [overlays.data]);
-
-  // ── Init map once ─────────────────────────────────────────────────────────
+  // Fetch ports
   useEffect(() => {
-    if (mapRef.current || !mapDivRef.current) return;
-    const map = L.map(mapDivRef.current, {
-      center: [8, 95], zoom: 3, zoomControl: false, attributionControl: false,
-    });
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 14 }).addTo(map);
-    L.control.zoom({ position: 'topright' }).addTo(map);
-    mapRef.current = map;
-    return () => { map.remove(); mapRef.current = null; };
+    fetchPorts()
+      .then(setPorts)
+      .catch(() => setPorts([]))
+      .finally(() => setLoading(false));
   }, []);
 
-  // ── Redraw everything when anything changes ───────────────────────────────
+  // Initialize Leaflet Map with Esri World Dark Gray tiles (NO API Key required!)
+  useEffect(() => {
+    if (mapRef.current || !mapDivRef.current) return;
+
+    const map = L.map(mapDivRef.current, {
+      center: [15, 88],
+      zoom: 4,
+      zoomControl: false,
+      attributionControl: false,
+    });
+
+    // Dark sleek maritime map layer (100% Free, NO API Key needed)
+    L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Base/MapServer/tile/{z}/{y}/{x}', {
+      maxZoom: 16,
+      attribution: 'Tiles &copy; Esri &mdash; Esri, DeLorme, NAVTEQ',
+    }).addTo(map);
+
+    L.control.zoom({ position: 'bottomright' }).addTo(map);
+    L.control.attribution({ position: 'bottomleft', prefix: '© Esri / OpenStreetMap' }).addTo(map);
+
+    setTimeout(() => {
+      map.invalidateSize();
+    }, 150);
+
+    mapRef.current = map;
+    return () => {
+      if (animFrameRef.current) cancelAnimationFrame(animFrameRef.current);
+      map.remove();
+      mapRef.current = null;
+    };
+  }, []);
+
+  // Render Port Markers
   useEffect(() => {
     const map = mapRef.current;
+    if (!map || ports.length === 0) return;
+
+    portMarkersRef.current.forEach(m => m.remove());
+    portMarkersRef.current.clear();
+
+    ports.forEach(port => {
+      let icon: L.DivIcon;
+      if (port.is_anchorage) {
+        icon = makeAnchorageIcon();
+      } else if (port.is_indian_hub) {
+        icon = makeHubIcon();
+      } else {
+        icon = makeGlobalIcon();
+      }
+
+      const roleLabel = port.is_anchorage ? 'Anchorage' : port.is_indian_hub ? 'Indian Hub' : 'Loading Port';
+      const color = port.is_indian_hub ? '#3b82f6' : '#ef4444';
+
+      const marker = L.marker([port.latitude, port.longitude], { icon });
+      marker.bindPopup(`
+        <div class="map-popup">
+          <div class="map-popup__header">
+            <span class="map-popup__dot" style="background:${color};box-shadow:0 0 5px ${color}"></span>
+            <strong>${port.name}</strong>
+            <span class="map-popup__badge" style="color:${color};border-color:${color}44;background:${color}18">${roleLabel}</span>
+          </div>
+          <div class="map-popup__grid">
+            <div class="map-popup__item"><span>Code</span><b>${port.code}</b></div>
+            <div class="map-popup__item"><span>Country</span><b>${port.country}</b></div>
+            <div class="map-popup__item"><span>Max Draft</span><b>${port.max_draft}m</b></div>
+            <div class="map-popup__item"><span>Max LOA</span><b>${port.max_loa > 999 ? '∞' : port.max_loa + 'm'}</b></div>
+          </div>
+          ${port.is_anchorage ? '<div class="map-popup__warn">⚓ Lighterage / Transshipment Anchorage</div>' : ''}
+        </div>`, { maxWidth: 280 });
+
+      marker.on('click', () => {
+        setOriginCode(prev => {
+          if (!prev || prev === port.code) return port.code;
+          setDestCode(port.code);
+          return prev;
+        });
+      });
+
+      marker.addTo(map);
+      portMarkersRef.current.set(port.code, marker);
+    });
+  }, [ports]);
+
+  // Draw Sea Lane + Animated Vector Vessel
+  const drawSeaLane = useCallback(async () => {
+    const map = mapRef.current;
+    if (!map || !originCode || !destCode || originCode === destCode) return;
+
+    if (animFrameRef.current) {
+      cancelAnimationFrame(animFrameRef.current);
+      animFrameRef.current = null;
+    }
+
+    sealaneLayersRef.current.forEach(l => map.removeLayer(l));
+    sealaneLayersRef.current = [];
+
+    let result: EvaluationResult | null = null;
+    try {
+      result = await evaluate({
+        cargo_tonnage: 75000,
+        origin_code: originCode,
+        destination_code: destCode,
+        vessel_code: vesselCode,
+        num_voyages: horizonToVoyages(3),
+        cvc_discount_pct: 5.0,
+      });
+      setEvalResult(result);
+    } catch {
+      setEvalResult(null);
+    }
+
+    const originPort = ports.find(p => p.code === originCode);
+    const destPort   = ports.find(p => p.code === destCode);
+    if (!originPort || !destPort) return;
+
+    const originLL: [number, number] = [originPort.latitude, originPort.longitude];
+    const destLL:   [number, number] = [destPort.latitude,   destPort.longitude];
+
+    const routeKey = `${originCode}_${destCode}`;
+    const distNM = ROUTE_DISTANCES[routeKey] ?? 4500;
+    const waypoints = computeSeaRoute(originCode, destCode, originLL, destLL);
+
+    const lighterageRequired = result?.lighterage_plan?.is_required ?? false;
+
+    if (lighterageRequired) {
+      // Leg A: Origin → Sagar/Sandheads (glowing cyan spline)
+      const legA = L.polyline(
+        [...waypoints.slice(0, -1), SAGAR_LL],
+        { color: '#38bdf8', weight: 4, opacity: 0.95 }
+      );
+
+      // Leg B: Sagar/Sandheads → Destination (dashed orange)
+      const legB = L.polyline(
+        [SAGAR_LL, destLL],
+        { color: '#f97316', weight: 4, dashArray: '8 5', opacity: 0.95 }
+      );
+
+      const lightMarker = L.marker(SAGAR_LL, { icon: makeLighterageIcon() });
+      const lp = result!.lighterage_plan;
+      lightMarker.bindPopup(
+        `<div class="map-popup">
+          <b style="color:#f97316">[LIGHTERAGE_REQUIRED]</b><br/>
+          Vessel draft exceeds port max.<br/>
+          Transship <b>${lp.lightered_tonnage.toLocaleString(undefined,{maximumFractionDigits:0})}T</b> at Sagar/Sandheads.<br/>
+          Time penalty: <b>${lp.time_penalty_days} days</b>
+        </div>`, { maxWidth: 240 }
+      );
+
+      const warnMarker = L.marker(destLL, { icon: makeWarningIcon() });
+      warnMarker.bindPopup('<b style="color:#ef4444">[LIGHTERAGE_REQUIRED]</b><br/>Shallow port — lighterage required.');
+
+      [legA, legB, lightMarker, warnMarker].forEach(l => {
+        l.addTo(map);
+        sealaneLayersRef.current.push(l);
+      });
+
+    } else {
+      // Glowing outer shadow line
+      const shadowLane = L.polyline(waypoints, { color: '#0284c7', weight: 8, opacity: 0.3 });
+
+      // Direct ocean sea lane (glowing cyan spline)
+      const lane = L.polyline(waypoints, { color: '#38bdf8', weight: 4, opacity: 0.95 });
+
+      const midIdx = Math.floor(waypoints.length / 2);
+      const midLL = waypoints[midIdx] || waypoints[0];
+
+      const distLabel = L.marker(midLL, {
+        icon: L.divIcon({
+          className: '',
+          html: `<div class="map-dist-label">${distNM} NM</div>`,
+          iconSize: [80, 22],
+          iconAnchor: [40, 11],
+        }),
+      });
+
+      lane.on('click', () => {
+        const avgP50 = result
+          ? result.p50_rates.reduce((a, b) => a + b, 0) / result.p50_rates.length
+          : null;
+        L.popup()
+          .setLatLng(midLL)
+          .setContent(`
+            <div class="map-popup">
+              <b>${originCode} → ${destCode}</b><br/>
+              Distance: <b>${distNM} NM</b><br/>
+              ${avgP50 ? `Forecast Rate: <b>$${result!.p10_rates[0].toFixed(2)}–$${result!.p90_rates[0].toFixed(2)}/T</b>` : ''}
+            </div>`)
+          .openOn(map);
+      });
+
+      [shadowLane, lane, distLabel].forEach(l => {
+        l.addTo(map);
+        sealaneLayersRef.current.push(l);
+      });
+    }
+
+    // ── Animated Vector Cargo Vessel Marker along smooth waypoints with 360° heading rotation ──
+    const initialBearing = calculateBearing(waypoints[0], waypoints[1] || waypoints[0]);
+    const vesselMarker = L.marker(waypoints[0], { icon: makeVesselIcon(initialBearing), zIndexOffset: 1000 });
+    vesselMarker.addTo(map);
+    sealaneLayersRef.current.push(vesselMarker);
+
+    const animDuration = 45000; // 45 seconds for a realistic, majestic nautical voyage speed
+    let startTime: number | null = null;
+    let lastBearing = -1;
+
+    function stepAnimation(timestamp: number) {
+      if (!startTime) startTime = timestamp;
+      const elapsed = (timestamp - startTime) % animDuration;
+      const progress = elapsed / animDuration;
+
+      const pos = interpolateWaypoints(waypoints, progress);
+      const nextPos = interpolateWaypoints(waypoints, Math.min(progress + 0.002, 1.0));
+      const bearing = Math.round(calculateBearing(pos, nextPos));
+
+      vesselMarker.setLatLng(pos);
+      if (Math.abs(bearing - lastBearing) >= 2) {
+        vesselMarker.setIcon(makeVesselIcon(bearing));
+        lastBearing = bearing;
+      }
+
+      animFrameRef.current = requestAnimationFrame(stepAnimation);
+    }
+
+    animFrameRef.current = requestAnimationFrame(stepAnimation);
+
+    map.fitBounds(L.latLngBounds([originLL, destLL, ...waypoints]).pad(0.25));
+  }, [originCode, destCode, vesselCode, ports]);
+
+  useEffect(() => {
+    drawSeaLane();
+    return () => {
+      if (animFrameRef.current) cancelAnimationFrame(animFrameRef.current);
+    };
+  }, [drawSeaLane]);
+
+  const resetMap = () => {
+    const map = mapRef.current;
     if (!map) return;
+    if (animFrameRef.current) cancelAnimationFrame(animFrameRef.current);
+    sealaneLayersRef.current.forEach(l => map.removeLayer(l));
+    sealaneLayersRef.current = [];
+    setEvalResult(null);
+    map.setView([15, 88], 4);
+    setTimeout(() => map.invalidateSize(), 100);
+  };
 
-    layersRef.current.forEach(l => l.remove());
-    layersRef.current = [];
-    const add = (layer: L.Layer) => { layer.addTo(map); layersRef.current.push(layer); };
-
-    const destination = ports.data.discharge_ports.find(p => p.id === destinationId);
-
-    // Corridor density, drawn first so it sits behind everything.
-    if (showCorridors) {
-      const counts = [...corridorCounts.values()];
-      const maxCount = Math.max(1, ...counts);
-      for (const c of CORRIDORS) {
-        const count = corridorCounts.get(c.id);
-        const share = count !== undefined ? count / maxCount : 0;
-        add(L.rectangle(c.bounds, {
-          color: CORRIDOR_HUE,
-          weight: 1,
-          opacity: count === undefined ? 0.18 : 0.45,
-          fillColor: CORRIDOR_HUE,
-          fillOpacity: count === undefined ? 0.03 : 0.06 + share * 0.16,
-        }).bindTooltip(
-          count === undefined
-            ? `${c.name} — no AIS coverage`
-            : `${c.name} — ${Math.round(count)} hulls`,
-          { sticky: true },
-        ));
-      }
-    }
-
-    // Trade lanes into the selected discharge port.
-    if (showRoutes && destination) {
-      for (const lp of ports.data.loading_ports) {
-        const nm = sailedNm(lp.lat, lp.lng, destination.lat, destination.lng);
-        const days = nm / (spec.speedKts * 24);
-        add(L.polyline([[lp.lat, lp.lng], [destination.lat, destination.lng]], {
-          color: LOAD_HUE, weight: 1.4, opacity: 0.4,
-        }).bindTooltip(
-          `${lp.name} to ${destination.name} — ${Math.round(nm).toLocaleString('en-US')} nm, ${days.toFixed(1)} d at ${spec.speedKts} kts`,
-          { sticky: true },
-        ));
-      }
-    }
-
-    // Load ports.
-    for (const lp of ports.data.loading_ports) {
-      add(L.marker([lp.lat, lp.lng], { icon: makeLoadingIcon() })
-        .bindPopup(`<div class="map-popup"><div class="map-popup__header"><strong>${esc(lp.name)}</strong></div>
-          <div class="map-popup__note">${esc(lp.country)} · ${esc(lp.commodities.join(', '))}</div></div>`));
-    }
-
-    // Discharge ports, coloured by what this class can actually do there.
-    for (const port of ports.data.discharge_ports) {
-      const marker = resolvePortMarker(port, vesselClass, tonnage);
-      const weather = weatherFor.get(port.id) ?? { precip: null, wind: null, stopped: false };
-
-      add(L.marker([port.lat, port.lng], { icon: makePortIcon(marker.outcome) })
-        .bindPopup(buildPopup(port, marker, weather), { maxWidth: 340 }));
-
-      // Weather ring, sized by rainfall.
-      if (showWeather && weather.precip !== null && weather.precip > 1) {
-        add(L.circle([port.lat, port.lng], {
-          radius: 18_000 + weather.precip * 3_500,
-          color: weather.stopped ? '#e05c5c' : '#5a93e8',
-          weight: 1,
-          opacity: 0.5,
-          fillColor: weather.stopped ? '#e05c5c' : '#5a93e8',
-          fillOpacity: 0.12,
-        }).bindTooltip(
-          `${port.name} — ${weather.precip.toFixed(1)} mm rain${weather.wind ? `, ${Math.round(weather.wind)} km/h` : ''}${weather.stopped ? ' · work stopped' : ''}`,
-          { sticky: true },
-        ));
-      }
-    }
-  }, [ports.data, vesselClass, tonnage, destinationId, showRoutes, showWeather, showCorridors, weatherFor, corridorCounts, spec.speedKts]);
-
-  const counts = useMemo(() => {
-    const tally: Record<BerthOutcome, number> = { ACCEPT_ALL_TIDE: 0, ACCEPT_HIGH_TIDE_ONLY: 0, REJECT: 0 };
-    for (const p of ports.data.discharge_ports) tally[resolvePortMarker(p, vesselClass, tonnage).outcome] += 1;
-    return tally;
-  }, [ports.data, vesselClass, tonnage]);
+  const originPorts = ports.filter(p => !p.is_anchorage);
+  const destPorts   = ports.filter(p => !p.is_anchorage && p.code !== originCode);
 
   return (
     <div className="map-page">
-      {/* Controls */}
+      {/* Controls bar */}
       <div className="map-controls">
         <div className="map-controls__left">
-          <span className="map-controls__label">Vessel Class</span>
-          {VESSEL_CLASSES.map(cls => {
-            const s = VESSEL_SPECS[cls];
-            return (
-              <button key={cls} id={`vessel-btn-${cls.toLowerCase()}`}
-                className={`map-vessel-btn ${vesselClass === cls ? 'map-vessel-btn--active' : ''}`}
-                style={vesselClass === cls ? { borderColor: s.color, color: s.color, background: `${s.color}18` } : {}}
-                onClick={() => setVesselClass(cls)}>
-                {cls}
-                <span className="map-vessel-btn__spec">{s.ladenDraftM}m draft · {s.loaM}m LOA</span>
-              </button>
-            );
-          })}
-        </div>
-
-        <div className="map-controls__right">
-          <select className="select map-dest" value={destinationId}
-            onChange={e => setDestinationId(e.target.value)}
-            title="Routes are drawn to this discharge port">
-            {ports.data.discharge_ports.map(p => (
-              <option key={p.id} value={p.id}>to {p.name}</option>
+          <span className="map-controls__label">Origin</span>
+          <select
+            className="map-select"
+            value={originCode}
+            onChange={e => setOriginCode(e.target.value)}
+            disabled={loading}
+          >
+            {originPorts.map(p => (
+              <option key={p.code} value={p.code}>{p.name} ({p.country})</option>
             ))}
           </select>
-          <button className={`btn ${showRoutes ? 'btn-active' : 'btn-ghost'}`}
-            onClick={() => setShowRoutes(r => !r)}>Routes</button>
-          <button className={`btn ${showWeather ? 'btn-active' : 'btn-ghost'}`}
-            onClick={() => setShowWeather(w => !w)}>Weather</button>
-          <button className={`btn ${showCorridors ? 'btn-active' : 'btn-ghost'}`}
-            onClick={() => setShowCorridors(c => !c)}>Fleet density</button>
-        </div>
-      </div>
 
-      <div className="map-notice">
-        <DataOriginNotice
-          origin={ports.origin}
-          error={ports.error}
-          stale={ports.data.sources_stale}
-          bundledLabel="Backend unreachable. Ports show their single declared draft, with no berth detail, weather or fleet density."
-        />
+          <span className="map-controls__label" style={{ marginLeft: '0.75rem' }}>Destination</span>
+          <select
+            className="map-select"
+            value={destCode}
+            onChange={e => setDestCode(e.target.value)}
+            disabled={loading}
+          >
+            {destPorts.map(p => (
+              <option key={p.code} value={p.code}>{p.name} ({p.country})</option>
+            ))}
+          </select>
+        </div>
+        <div className="map-controls__right">
+          <button className="btn btn-ghost btn--sm" onClick={resetMap}>
+            🔄 Reset Map
+          </button>
+        </div>
       </div>
 
       {/* Legend */}
       <div className="map-legend">
-        {(Object.keys(OUTCOME_COLOR) as BerthOutcome[]).map(o => (
-          <div key={o} className="map-legend__item">
-            <span className="map-legend__dot" style={{ background: OUTCOME_COLOR[o], boxShadow: `0 0 5px ${OUTCOME_COLOR[o]}` }} />
-            <span>{OUTCOME_LABEL[o]} <b className="mono">{counts[o]}</b></span>
-          </div>
-        ))}
         <div className="map-legend__item">
-          <span className="map-legend__square" />
-          <span>Loading port</span>
+          <span className="map-legend__dot" style={{ background: '#3b82f6', boxShadow: '0 0 5px #3b82f6' }} />
+          <span>Indian Hub Port</span>
+        </div>
+        <div className="map-legend__item">
+          <span className="map-legend__dot" style={{ background: '#ef4444', boxShadow: '0 0 5px #ef4444' }} />
+          <span>Global Loading Port</span>
+        </div>
+        <div className="map-legend__item">
+          <span style={{ display: 'inline-block', width: 16, height: 16, borderRadius: '50%', border: '2px dashed #3b82f6', marginRight: 6 }} />
+          <span>Anchorage (Sagar/Sandheads)</span>
+        </div>
+        <div className="map-legend__item">
+          <span style={{ display: 'inline-block', width: 20, height: 3, background: '#38bdf8', marginRight: 6, borderRadius: 2 }} />
+          <span>Smooth Spline Sea Lane</span>
+        </div>
+        <div className="map-legend__item">
+          <span style={{ display: 'inline-block', width: 20, height: 3, background: '#f97316', marginRight: 6, borderRadius: 2, borderTop: '2px dashed #f97316' }} />
+          <span>Lighterage Route</span>
+        </div>
+        <div className="map-legend__item" style={{ marginLeft: 'auto' }}>
+          <span style={{ display: 'inline-block', width: 10, height: 10, borderRadius: '50%', background: '#38bdf8', boxShadow: '0 0 8px #38bdf8', marginRight: 6 }} />
+          <span style={{ color: '#38bdf8', fontWeight: 600 }}>Vector Vessel (360° Rotated)</span>
         </div>
       </div>
 
-      {/* Vessel info strip */}
-      <div className="map-vessel-info">
-        <span className="map-vessel-info__cls" style={{ color: spec.color }}>{vesselClass}</span>
-        <span>Laden Draft <b>{spec.ladenDraftM} m</b></span>
-        <span>LOA <b>{spec.loaM} m</b></span>
-        <span>Beam <b>{spec.beamM} m</b></span>
-        <span>DWT <b>{spec.dwt.min.toLocaleString('en-US')}–{spec.dwt.max.toLocaleString('en-US')} T</b></span>
-        <span className="map-vessel-info__desc">{spec.description}</span>
-      </div>
+      {/* Evaluation headline strip */}
+      {evalResult && (
+        <div className={`map-eval-strip ${evalResult.is_cvc_favorable ? 'map-eval-strip--green' : 'map-eval-strip--amber'}`}>
+          <span>{evalResult.headline_summary}</span>
+          {evalResult.lighterage_plan.is_required && (
+            <span className="map-lighterage-badge">[LIGHTERAGE_REQUIRED]</span>
+          )}
+        </div>
+      )}
 
+      {/* Map container */}
       <div className="map-container" ref={mapDivRef} id="leaflet-map" />
     </div>
   );

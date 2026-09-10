@@ -4,9 +4,9 @@ __pycache__/
 .env
 
 # Rebuildable. The snapshot is committed; the cache it seeds is not.
-data/cache.db
-data/cache.db-wal
-data/cache.db-shm
+data/cache*.db
+data/cache*.db-wal
+data/cache*.db-shm
 
 # Static AIS dumps run to hundreds of megabytes. Downloaded, never committed.
 data/reference/ais_positions.csv

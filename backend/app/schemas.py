@@ -147,6 +147,17 @@ class ContractLineItem(BaseModel):
     note: str | None = None
 
 
+class EvaluateRequest(BaseModel):
+    """The evaluator page's request shape, kept as it was written."""
+
+    cargo_tonnage: float = Field(..., ge=1_000, le=500_000)
+    origin_code: str
+    destination_code: str
+    vessel_code: str
+    num_voyages: int = Field(4, ge=1, le=12)
+    cvc_discount_pct: float = Field(5.0, ge=0.0, le=15.0)
+
+
 class MultiPortRequest(BaseModel):
     load_port_id: str = "newcastle"
     discharge_port_ids: list[str] = Field(default_factory=lambda: ["gangavaram", "haldia"], min_length=2, max_length=2)
