@@ -18,7 +18,6 @@ function cr(n: number): string {
   const d = Math.abs(n) >= 10 ? 1 : 2;
   return `₹${n.toFixed(d)} Cr`;
 }
-function usd(n: number): string { return `$${n.toFixed(2)}`; }
 function pct(n: number): string { return `${Math.round(n * 100)}%`; }
 
 function DualCost({ usdVal, crVal }: { usdVal: number; crVal: number }) {

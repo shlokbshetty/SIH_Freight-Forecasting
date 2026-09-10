@@ -6,6 +6,7 @@ import Forecast from './pages/Forecast';
 import Matcher from './pages/Matcher';
 import ContractComparison from './pages/ContractComparison';
 import RiskAlerts from './pages/RiskAlerts';
+import Evaluate from './pages/Evaluate';
 import VoyageEditor from './pages/VoyageEditor';
 
 export default function App() {
@@ -13,12 +14,13 @@ export default function App() {
     <BrowserRouter>
       <Routes>
         <Route element={<Layout />}>
-          <Route index          element={<CommandCenter />}    />
-          <Route path="/map"        element={<MapPage />}          />
-          <Route path="/forecast"   element={<Forecast />}         />
-          <Route path="/matcher"    element={<Matcher />}          />
-          <Route path="/contracts"     element={<ContractComparison />} />
-          <Route path="/risk"          element={<RiskAlerts />}       />
+          <Route index              element={<CommandCenter />}      />
+          <Route path="/map"        element={<MapPage />}            />
+          <Route path="/forecast"   element={<Forecast />}           />
+          <Route path="/matcher"    element={<Matcher />}            />
+          <Route path="/contracts"  element={<ContractComparison />} />
+          <Route path="/evaluate"   element={<Evaluate />}           />
+          <Route path="/risk"       element={<RiskAlerts />}         />
           <Route path="/voyage-editor" element={<VoyageEditor />}     />
         </Route>
       </Routes>

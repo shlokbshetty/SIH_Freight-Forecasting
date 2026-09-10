@@ -1,4 +1,14 @@
-# Logs
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+.pytest_cache/
+.coverage
+htmlcov/
+*.swp
+*.swo
+
+# Node / Frontend
 logs
 *.log
 npm-debug.log*
