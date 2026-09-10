@@ -3,7 +3,7 @@ import {
   ComposedChart, Area, Line, XAxis, YAxis, CartesianGrid,
   Tooltip, ReferenceLine, ResponsiveContainer, Legend,
 } from 'recharts';
-import { MOCK_FORECAST, type ForecastHorizon } from '../data/mockForecast';
+import { MOCK_FORECAST, type ForecastHorizon, type ForecastPoint } from '../data/mockForecast';
 import { VESSEL_SPECS, VESSEL_CLASSES, type VesselClass } from '../data/vessels';
 import './Forecast.css';
 
@@ -61,7 +61,7 @@ function TodayLabel({ viewBox }: any) {
 }
 
 // ─── Headline sentence generator ──────────────────────────────────────────────
-function buildHeadline(cls: VesselClass, horizon: ForecastHorizon, data: ReturnType<typeof MOCK_FORECAST[VesselClass]['1M']>): string {
+function buildHeadline(cls: VesselClass, horizon: ForecastHorizon, data: ForecastPoint[]): string {
   const lastHistorical = [...data].reverse().find(d => d.historical !== undefined);
   const lastForecast   = [...data].reverse().find(d => d.forecast !== undefined);
 
