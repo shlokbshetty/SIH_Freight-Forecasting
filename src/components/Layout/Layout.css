@@ -3,7 +3,7 @@
   height: 100vh;
   width: 100vw;
   overflow: hidden;
-  background: var(--bg-base);
+  background: var(--water);
 }
 
 .app-shell__main {
@@ -12,6 +12,7 @@
   flex-direction: column;
   overflow: hidden;
   min-width: 0;
+  background: var(--water);
 }
 
 .app-shell__content {
