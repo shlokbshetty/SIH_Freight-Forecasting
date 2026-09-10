@@ -1,332 +1,681 @@
-import { useState, useMemo } from 'react';
-import { MOCK_CONTRACT_SCENARIO, MOCK_SPOT_SEGMENTS } from '../data/mockContracts';
+import { useMemo, useState } from 'react';
+import {
+  Area, AreaChart, CartesianGrid, ComposedChart, LabelList, Line, ReferenceLine,
+  ResponsiveContainer, Tooltip, XAxis, YAxis,
+} from 'recharts';
+import { AlertTriangle, Anchor, Ship } from 'lucide-react';
+import { DISCHARGE_PORTS, LOADING_PORTS } from '../data/ports';
+import { VESSEL_CLASSES, type VesselClass } from '../data/vessels';
+import { DEFAULT_PROGRAMME, PROGRAMME_PRESETS } from '../data/mockContracts';
+import { BUNKER_BASIS_USD, USD_INR } from '../data/costAssumptions';
+import { breakEvenDensity, cumulativeSeries, evaluate, type CvcInputs, type CvcResult } from '../lib/cvcEngine';
 import './ContractComparison.css';
 
-// ─── Live computation engine ──────────────────────────────────────────────────
+// ─── Series colours ───────────────────────────────────────────────────────────
+// Two series, one identity each. Validated for deuteranopia, protanopia and
+// tritanopia separation against the --hull surface. Green and red stay reserved
+// for the verdict, so they are never doing double duty as a series colour.
+const SPOT_HUE = '#c87941';
+const CVC_HUE = '#5a93e8';
 
-interface ComputedResults {
-  spotTotal:  number;   // INR Crores
-  cvcTotal:   number;
-  delta:      number;   // positive = CVC cheaper
-  lineItems: { label: string; spot: number; cvc: number }[];
-  breakEven:  number;   // USD/MT
-  spotWinPct: number;   // %
-  segmentHeights: number[]; // px heights for stacked spot bars
-  verdict: string;
-  verdictType: 'savings' | 'loss';
+// ─── Formatting ───────────────────────────────────────────────────────────────
+
+function cr(n: number, digits?: number): string {
+  const d = digits ?? (Math.abs(n) >= 10 ? 1 : 2);
+  return `₹${n.toFixed(d)} Cr`;
 }
 
-function compute(bunkerPrice: number, cvcDiscountPct: number): ComputedResults {
-  const s = MOCK_CONTRACT_SCENARIO;
-  const bunkerMultiplier = bunkerPrice / s.bunkerPrice;
-  const cvcRate = s.spotRate * (1 - cvcDiscountPct / 100);
-
-  // Line items — recompute from sliders
-  const baseFreightSpot = +(s.lineItems[0].spot).toFixed(2);
-  const baseFreightCvc  = +(s.lineItems[0].spot * (cvcRate / s.spotRate)).toFixed(2);
-  const bunkerSpot      = +(s.lineItems[1].spot * bunkerMultiplier).toFixed(2);
-  const bunkerCvc       = +(s.lineItems[1].cvc  * bunkerMultiplier * 0.92).toFixed(2);
-  const portSpot        = s.lineItems[2].spot;
-  const portCvc         = s.lineItems[2].cvc;
-  const demurrageSpot   = +(s.lineItems[3].spot).toFixed(2);
-  const demurrageCvc    = +(s.lineItems[3].cvc  * 0.85).toFixed(2);
-  const lighterageSpot  = 0;
-  const lighterageCvc   = 0;
-
-  const lineItems = [
-    { label: 'Base Freight',       spot: baseFreightSpot, cvc: baseFreightCvc },
-    { label: 'Bunker Adjustment',  spot: bunkerSpot,      cvc: bunkerCvc      },
-    { label: 'Port Charges',       spot: portSpot,        cvc: portCvc        },
-    { label: 'Expected Demurrage', spot: demurrageSpot,   cvc: demurrageCvc   },
-    { label: 'Lighterage',         spot: lighterageSpot,  cvc: lighterageCvc  },
-  ];
-
-  const spotTotal = +(lineItems.reduce((sum, l) => sum + l.spot, 0)).toFixed(2);
-  const cvcTotal  = +(lineItems.reduce((sum, l) => sum + l.cvc,  0)).toFixed(2);
-  const delta     = +(spotTotal - cvcTotal).toFixed(2);
-
-  // Break-even: spot rate at which spot == CVC total
-  const breakEven = +(s.spotRate * (cvcTotal / spotTotal)).toFixed(1);
-  // Probability spot wins: rough heuristic based on delta size
-  const spotWinPct = Math.max(5, Math.min(70, Math.round(30 - delta * 3)));
-
-  // Stacked segment heights (pixels) for visual — vary with bunker
-  const segmentHeights = MOCK_SPOT_SEGMENTS.map(seg => {
-    const h = 60 + seg.rateDelta * 8 * bunkerMultiplier;
-    return Math.max(30, Math.round(h));
-  });
-
-  const cvcSaves = delta >= 0;
-  const absD = Math.abs(delta).toFixed(1);
-  const verdict = cvcSaves
-    ? `CVC saves ₹${absD} Cr · break-even $${breakEven}/T · ${spotWinPct}% chance spot wins`
-    : `Spot cheaper by ₹${absD} Cr at current bunker — delay CVC until rates stabilise`;
-
-  return { spotTotal, cvcTotal, delta, lineItems, breakEven, spotWinPct, segmentHeights, verdict, verdictType: cvcSaves ? 'savings' : 'loss' };
+/** CVC measured against spot: a negative figure means the lock costs less. */
+function vsSpot(cvcMinusSpot: number): string {
+  const d = Math.abs(cvcMinusSpot) >= 10 ? 1 : 2;
+  return `${cvcMinusSpot >= 0 ? '+' : '−'}₹${Math.abs(cvcMinusSpot).toFixed(d)} Cr`;
 }
 
-// ─── Custom stacked bar visual ────────────────────────────────────────────────
+/** Plain words for one edge of the forecast band. */
+function spotVersusLock(spotMinusCvc: number): string {
+  const d = Math.abs(spotMinusCvc) >= 10 ? 1 : 2;
+  return `₹${Math.abs(spotMinusCvc).toFixed(d)} Cr ${spotMinusCvc >= 0 ? 'dearer' : 'cheaper'}`;
+}
 
-function CostVisual({ results }: { results: ComputedResults }) {
-  const { segmentHeights, spotTotal, cvcTotal, delta } = results;
-  const maxH = 240;
-  const spotTotalH = segmentHeights.reduce((a, b) => a + b, 0);
-  const scale = maxH / Math.max(spotTotalH, 1);
-  const scaledHeights = segmentHeights.map(h => Math.round(h * scale));
-  const cvcH = Math.round((cvcTotal / spotTotal) * spotTotalH * scale);
+function usd(n: number): string {
+  return `$${n.toFixed(2)}`;
+}
 
-  const spotColors = ['#c2822a', '#b87333', '#d4962e', '#a0692a'];
+function pct(n: number): string {
+  return `${Math.round(n * 100)}%`;
+}
+
+// ─── Cumulative cost chart ────────────────────────────────────────────────────
+
+function CumulativeTooltip({ active, payload }: any) {
+  if (!active || !payload?.length) return null;
+  const d = payload[0]?.payload;
+  if (!d) return null;
+  const cvcMinusSpot = d.cvc - d.spot;
+  return (
+    <div className="cc-tip">
+      <p className="cc-tip__head">{d.voyage} · {d.monthLabel}</p>
+      <p className="cc-tip__row">
+        <span><i className="cc-tip__swatch" style={{ background: SPOT_HUE }} />Spot to date</span>
+        <b>{cr(d.spot)}</b>
+      </p>
+      <p className="cc-tip__row">
+        <span><i className="cc-tip__swatch" style={{ background: CVC_HUE }} />CVC to date</span>
+        <b>{cr(d.cvc)}</b>
+      </p>
+      <p className="cc-tip__row cc-tip__row--sep">
+        <span>CVC vs spot</span>
+        <b style={{ color: cvcMinusSpot <= 0 ? 'var(--sig-green)' : 'var(--sig-red)' }}>{vsSpot(cvcMinusSpot)}</b>
+      </p>
+      <p className="cc-tip__foot">Forecast band {cr(d.spotLow)} – {cr(d.spotHigh)}</p>
+    </div>
+  );
+}
+
+/** Direct label on the final point of a series, so the lines need no hunting. */
+function endLabel(lastIndex: number, text: string, fill: string, dy: number) {
+  return (props: any) => {
+    if (props.index !== lastIndex) return null;
+    return (
+      <text
+        x={props.x}
+        y={props.y + dy}
+        textAnchor="end"
+        fill={fill}
+        fontSize={11}
+        fontWeight={600}
+        fontFamily="IBM Plex Mono, monospace"
+      >
+        {text}
+      </text>
+    );
+  };
+}
+
+function CumulativeChart({ result }: { result: CvcResult }) {
+  const data = useMemo(() => cumulativeSeries(result), [result]);
+
+  // Whichever programme finishes higher gets its label above the point, so the
+  // two never converge when the lines cross.
+  const spotOnTop = result.spot.totalCr >= result.cvc.totalCr;
+  const ABOVE = -11;
+  const BELOW = 18;
 
   return (
-    <div className="cost-visual">
-      {/* Spot column */}
-      <div className="cost-visual__col">
-        <div className="cost-visual__bars">
-          {scaledHeights.map((h, i) => (
-            <div
-              key={i}
-              className="cost-visual__seg"
-              style={{ height: h, background: spotColors[i % spotColors.length] }}
-              title={`Voyage ${i + 1}`}
-            >
-              {h > 20 && <span className="cost-visual__seg-label">V{i + 1}</span>}
-            </div>
-          ))}
-        </div>
-        <div className="cost-visual__col-label">
-          <span>{MOCK_CONTRACT_SCENARIO.numVoyages} spot</span>
-          <b>₹{spotTotal} Cr</b>
-        </div>
-      </div>
+    <div className="cc-chart">
+      <ResponsiveContainer width="100%" height="100%">
+        <ComposedChart data={data} margin={{ top: 22, right: 18, left: 4, bottom: 4 }}>
+          <CartesianGrid stroke="rgba(255,255,255,0.05)" vertical={false} />
+          <XAxis
+            dataKey="voyage"
+            tick={{ fill: 'var(--chalk-faint)', fontSize: 11 }}
+            tickLine={false}
+            axisLine={{ stroke: 'rgba(255,255,255,0.08)' }}
+          />
+          <YAxis
+            tick={{ fill: 'var(--chalk-faint)', fontSize: 11 }}
+            tickLine={false}
+            axisLine={false}
+            width={52}
+            tickFormatter={(v: number) => `₹${v.toFixed(0)}`}
+          />
+          <Tooltip content={<CumulativeTooltip />} cursor={{ stroke: 'rgba(255,255,255,0.16)' }} />
 
-      {/* Delta annotation */}
-      <div className="cost-visual__delta">
-        <div className="cost-visual__delta-arrow">
-          <div className="cost-visual__delta-line" style={{ height: Math.abs(cvcH - scaledHeights.reduce((a,b)=>a+b,0)) + 20 }} />
-          <span
-            className="cost-visual__delta-val"
-            style={{ color: delta >= 0 ? 'var(--accent-green)' : 'var(--accent-red)' }}
+          {/* Where the forecast's 90% band puts the spot programme */}
+          <Area
+            dataKey="spotBand"
+            stroke="none"
+            fill={SPOT_HUE}
+            fillOpacity={0.12}
+            isAnimationActive={false}
+            activeDot={false}
+          />
+          <Line
+            dataKey="spot"
+            name="Spot"
+            stroke={SPOT_HUE}
+            strokeWidth={2}
+            dot={{ r: 3.5, fill: SPOT_HUE, strokeWidth: 0 }}
+            activeDot={{ r: 5.5, fill: SPOT_HUE, stroke: 'var(--hull)', strokeWidth: 2 }}
+            isAnimationActive={false}
           >
-            delta<br />₹{Math.abs(delta).toFixed(1)} Cr
-          </span>
-        </div>
-      </div>
+            <LabelList dataKey="spot" content={endLabel(data.length - 1, cr(result.spot.totalCr), SPOT_HUE, spotOnTop ? ABOVE : BELOW)} />
+          </Line>
+          <Line
+            dataKey="cvc"
+            name="CVC"
+            stroke={CVC_HUE}
+            strokeWidth={2}
+            dot={{ r: 3.5, fill: CVC_HUE, strokeWidth: 0 }}
+            activeDot={{ r: 5.5, fill: CVC_HUE, stroke: 'var(--hull)', strokeWidth: 2 }}
+            isAnimationActive={false}
+          >
+            <LabelList dataKey="cvc" content={endLabel(data.length - 1, cr(result.cvc.totalCr), CVC_HUE, spotOnTop ? BELOW : ABOVE)} />
+          </Line>
+        </ComposedChart>
+      </ResponsiveContainer>
+    </div>
+  );
+}
 
-      {/* CVC column */}
-      <div className="cost-visual__col">
-        <div className="cost-visual__bars">
-          <div
-            className="cost-visual__seg cost-visual__seg--cvc"
-            style={{ height: cvcH }}
-          >
-            <span className="cost-visual__seg-label">CVC</span>
-          </div>
-        </div>
-        <div className="cost-visual__col-label">
-          <span>1 CVC</span>
-          <b>₹{cvcTotal} Cr</b>
-        </div>
+// ─── Break-even probability chart ─────────────────────────────────────────────
+
+/** Whole-dollar ticks across the plotted range, so no two round to the same label. */
+function rateTicks(from: number, to: number): { ticks: number[]; step: number } {
+  const target = (to - from) / 5;
+  const magnitude = 10 ** Math.floor(Math.log10(Math.max(target, 1e-6)));
+  const step = [1, 2, 2.5, 5, 10].map(m => m * magnitude).find(c => c >= target) ?? magnitude * 10;
+  const ticks: number[] = [];
+  for (let t = Math.ceil(from / step) * step; t <= to + 1e-9; t += step) {
+    ticks.push(+t.toFixed(6));
+  }
+  return { ticks, step };
+}
+
+function BreakEvenChart({ result }: { result: CvcResult }) {
+  const data = useMemo(() => breakEvenDensity(result), [result]);
+  const axis = useMemo(
+    () => (data.length ? rateTicks(data[0].rate, data[data.length - 1].rate) : { ticks: [], step: 1 }),
+    [data],
+  );
+
+  if (!data.length) {
+    return <div className="cc-chart cc-chart--empty">Forecast band too narrow to price this risk.</div>;
+  }
+
+  return (
+    <div className="cc-chart">
+      <ResponsiveContainer width="100%" height="100%">
+        <AreaChart data={data} margin={{ top: 26, right: 14, left: 4, bottom: 4 }}>
+          <CartesianGrid stroke="rgba(255,255,255,0.05)" vertical={false} />
+          <XAxis
+            dataKey="rate"
+            type="number"
+            domain={['dataMin', 'dataMax']}
+            tick={{ fill: 'var(--chalk-faint)', fontSize: 11 }}
+            tickLine={false}
+            axisLine={{ stroke: 'rgba(255,255,255,0.08)' }}
+            ticks={axis.ticks}
+            tickFormatter={(v: number) => `$${v.toFixed(axis.step < 1 ? 1 : 0)}`}
+          />
+          {/* Density height carries no unit the reader needs — area is the message. */}
+          <YAxis hide />
+
+          <Area
+            dataKey="spotWins"
+            stroke={SPOT_HUE}
+            strokeWidth={1.5}
+            fill={SPOT_HUE}
+            fillOpacity={0.34}
+            connectNulls={false}
+            isAnimationActive={false}
+            activeDot={false}
+          />
+          <Area
+            dataKey="cvcWins"
+            stroke={CVC_HUE}
+            strokeWidth={1.5}
+            fill={CVC_HUE}
+            fillOpacity={0.24}
+            connectNulls={false}
+            isAnimationActive={false}
+            activeDot={false}
+          />
+
+          <ReferenceLine
+            x={+result.breakEvenUsdPerMt.toFixed(3)}
+            stroke="var(--chalk)"
+            strokeWidth={1.5}
+            label={{
+              value: `break-even ${usd(result.breakEvenUsdPerMt)}`,
+              position: 'top',
+              fill: 'var(--chalk)',
+              fontSize: 10.5,
+              fontFamily: 'IBM Plex Mono, monospace',
+            }}
+          />
+        </AreaChart>
+      </ResponsiveContainer>
+    </div>
+  );
+}
+
+// ─── Slider ───────────────────────────────────────────────────────────────────
+
+function Slider(props: {
+  id: string;
+  label: string;
+  value: number;
+  display: string;
+  min: number;
+  max: number;
+  step: number;
+  minLabel: string;
+  maxLabel: string;
+  hint: string;
+  onChange: (v: number) => void;
+}) {
+  return (
+    <div className="cc-slider-group">
+      <div className="cc-slider-header">
+        <label className="label" htmlFor={props.id}>{props.label}</label>
+        <span className="cc-slider-val mono">{props.display}</span>
+      </div>
+      <input
+        id={props.id}
+        type="range"
+        className="cc-slider"
+        min={props.min}
+        max={props.max}
+        step={props.step}
+        value={props.value}
+        onChange={e => props.onChange(Number(e.target.value))}
+      />
+      <div className="cc-slider-range">
+        <span>{props.minLabel}</span>
+        <span className="cc-slider-hint">{props.hint}</span>
+        <span>{props.maxLabel}</span>
       </div>
     </div>
   );
 }
 
-// ─── Main component ───────────────────────────────────────────────────────────
+// ─── Page ─────────────────────────────────────────────────────────────────────
+
 export default function ContractComparison() {
-  const s = MOCK_CONTRACT_SCENARIO;
+  const [inputs, setInputs] = useState<CvcInputs>(DEFAULT_PROGRAMME);
+  const set = <K extends keyof CvcInputs>(key: K, value: CvcInputs[K]) =>
+    setInputs(prev => ({ ...prev, [key]: value }));
 
-  const [bunkerPrice,   setBunkerPrice]   = useState(s.bunkerPrice);
-  const [cvcDiscount,   setCvcDiscount]   = useState(s.cvcDiscount);
+  const result = useMemo(() => evaluate(inputs), [inputs]);
+  const {
+    spot, cvc, deltaCr, deltaPct, breakEvenUsdPerMt, probSpotWins, band,
+    lighterage, feasibility, headline, cvcWins, profile, lockedRateUsdPerMt,
+    marketRateUsdPerMt, rateDistribution, lineItems,
+  } = result;
 
-  const results = useMemo(() => compute(bunkerPrice, cvcDiscount), [bunkerPrice, cvcDiscount]);
-  const { lineItems, spotTotal, cvcTotal, delta, breakEven, spotWinPct, verdict, verdictType } = results;
+  const activePreset = PROGRAMME_PRESETS.find(
+    p => p.inputs.loadPortId === inputs.loadPortId
+      && p.inputs.dischargePortId === inputs.dischargePortId
+      && p.inputs.vesselClass === inputs.vesselClass,
+  );
 
   return (
     <div className="cc-page">
 
-      {/* ① Verdict banner — always first, always visible ─────────────────── */}
-      <div className={`cc-verdict ${verdictType === 'savings' ? 'cc-verdict--green' : 'cc-verdict--red'}`}>
+      {/* ① The trade, in one sentence ───────────────────────────────────── */}
+      <div className={`cc-verdict ${cvcWins ? 'cc-verdict--green' : 'cc-verdict--red'}`}>
         <div className="cc-verdict__dot" />
-        <p className="cc-verdict__text">{verdict}</p>
-        <span className="cc-verdict__tag">{verdictType === 'savings' ? 'LOCK CVC' : 'HOLD SPOT'}</span>
+        <p className="cc-verdict__text">{headline}</p>
+        <span className="cc-verdict__tag">{cvcWins ? 'LOCK CVC' : 'STAY SPOT'}</span>
       </div>
 
       <div className="cc-body">
 
-        {/* ② Cost visual + Sensitivity ─────────────────────────────────── */}
-        <div className="cc-top-row">
-
-          {/* Cost comparison */}
-          <div className="card cc-cost-card">
-            <p className="card-title">Cost Comparison — {s.route}</p>
-            <CostVisual results={results} />
+        {/* ② The programme being priced ──────────────────────────────────── */}
+        <div className="card cc-scenario">
+          <div className="cc-scenario__presets">
+            <span className="card-title cc-scenario__presets-label">Programme</span>
+            {PROGRAMME_PRESETS.map(p => (
+              <button
+                key={p.id}
+                className={`cc-preset ${activePreset?.id === p.id ? 'cc-preset--active' : ''}`}
+                title={p.hint}
+                onClick={() => setInputs(prev => ({
+                  ...p.inputs,
+                  bunkerPriceUsd: prev.bunkerPriceUsd,
+                  demurrageUsdPerDay: prev.demurrageUsdPerDay,
+                  cvcDiscountPct: prev.cvcDiscountPct,
+                }))}
+              >
+                {p.label}
+              </button>
+            ))}
           </div>
 
-          {/* Sensitivity */}
-          <div className="card cc-sensitivity">
-            <p className="card-title">Sensitivity</p>
-            <div className="sens-rows">
-              <div className="sens-row">
-                <span>Break-even rate</span>
-                <b className="mono">${breakEven}/MT</b>
-              </div>
-              <div className="sens-row">
-                <span>Downside if rates fall 20%</span>
-                <b className="mono sens-green">
-                  ₹{(delta + cvcTotal * 0.15).toFixed(1)} Cr saved
-                </b>
-              </div>
-              <div className="sens-row">
-                <span>Upside if rates rise 20%</span>
-                <b className="mono sens-amber">
-                  ₹{(delta * 1.4).toFixed(1)} Cr additional saving
-                </b>
-              </div>
-              <div className="sens-row">
-                <span>Forecast confidence</span>
-                <b className="mono sens-blue">72%</b>
-              </div>
-              <div className="sens-row">
-                <span>Chance spot wins</span>
-                <b className="mono" style={{ color: spotWinPct > 40 ? 'var(--accent-amber)' : 'var(--accent-green)' }}>
-                  {spotWinPct}%
-                </b>
-              </div>
+          <div className="cc-scenario__fields">
+            <div className="cc-field">
+              <label className="label" htmlFor="cc-load">Load port</label>
+              <select
+                id="cc-load"
+                className="select"
+                value={inputs.loadPortId}
+                onChange={e => set('loadPortId', e.target.value)}
+              >
+                {LOADING_PORTS.map(p => (
+                  <option key={p.id} value={p.id}>{p.name}, {p.country}</option>
+                ))}
+              </select>
             </div>
 
-            {/* Mini stats */}
-            <div className="sens-divider" />
-            <div className="sens-mini-stats">
-              <div className="sens-mini-stat">
-                <span>Vessel</span>
-                <b>{s.vesselClass}</b>
-              </div>
-              <div className="sens-mini-stat">
-                <span>Route</span>
-                <b>{s.route}</b>
-              </div>
-              <div className="sens-mini-stat">
-                <span>Cargo</span>
-                <b>{s.cargoTonnes.toLocaleString()} MT</b>
-              </div>
-              <div className="sens-mini-stat">
-                <span>Voyages</span>
-                <b>{s.numVoyages} spot vs 1 CVC</b>
-              </div>
+            <div className="cc-field">
+              <label className="label" htmlFor="cc-discharge">Discharge port</label>
+              <select
+                id="cc-discharge"
+                className="select"
+                value={inputs.dischargePortId}
+                onChange={e => set('dischargePortId', e.target.value)}
+              >
+                {DISCHARGE_PORTS.map(p => (
+                  <option key={p.id} value={p.id}>{p.name}</option>
+                ))}
+              </select>
+            </div>
+
+            <div className="cc-field">
+              <label className="label" htmlFor="cc-vessel">Vessel class</label>
+              <select
+                id="cc-vessel"
+                className="select"
+                value={inputs.vesselClass}
+                onChange={e => set('vesselClass', e.target.value as VesselClass)}
+              >
+                {VESSEL_CLASSES.map(c => <option key={c} value={c}>{c}</option>)}
+              </select>
+            </div>
+
+            <div className="cc-field">
+              <label className="label" htmlFor="cc-tonnes">Cargo per voyage</label>
+              <input
+                id="cc-tonnes"
+                className="input mono"
+                type="number"
+                min={10_000}
+                max={200_000}
+                step={1_000}
+                value={inputs.cargoTonnes}
+                onChange={e => set('cargoTonnes', Math.max(1_000, Number(e.target.value) || 0))}
+              />
+            </div>
+
+            <div className="cc-field">
+              <label className="label" htmlFor="cc-voyages">Voyages</label>
+              <input
+                id="cc-voyages"
+                className="input mono"
+                type="number"
+                min={1}
+                max={12}
+                step={1}
+                value={inputs.numVoyages}
+                onChange={e => set('numVoyages', Math.min(12, Math.max(1, Number(e.target.value) || 1)))}
+              />
             </div>
           </div>
         </div>
 
-        {/* ③ Line-item breakdown ───────────────────────────────────────── */}
+        {/* ③ What the constraint engine has to say ───────────────────────── */}
+        {(feasibility.blocked || lighterage.required) && (
+          <div className="cc-flags">
+            {feasibility.blocked && (
+              <div className="cc-flag cc-flag--block">
+                <AlertTriangle size={14} />
+                <span>{feasibility.reason}</span>
+              </div>
+            )}
+            {lighterage.required && (
+              <div className="cc-flag cc-flag--info">
+                <Anchor size={14} />
+                <span>{lighterage.reason}</span>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* ④ The four numbers that decide it ─────────────────────────────── */}
+        <div className="cc-kpis">
+          <div className="cc-kpi cc-kpi--hero">
+            <span className="cc-kpi__label">Programme delta</span>
+            <span
+              className="cc-kpi__hero mono"
+              style={{ color: cvcWins ? 'var(--sig-green)' : 'var(--sig-red)' }}
+            >
+              {cr(Math.abs(deltaCr))}
+            </span>
+            <span className="cc-kpi__sub">
+              {cvcWins ? 'CVC cheaper' : 'spot cheaper'} across {inputs.numVoyages} voyages · {Math.abs(deltaPct).toFixed(1)}% of programme
+            </span>
+          </div>
+
+          <div className="cc-kpi">
+            <span className="cc-kpi__label">Break-even spot rate</span>
+            <span className="cc-kpi__val mono">{usd(breakEvenUsdPerMt)}<i>/T</i></span>
+            <span className="cc-kpi__sub">
+              the average spot level where both programmes cost the same
+            </span>
+          </div>
+
+          <div className="cc-kpi">
+            <span className="cc-kpi__label">Chance spot wins</span>
+            <span
+              className="cc-kpi__val mono"
+              style={{ color: probSpotWins > 0.4 ? 'var(--sig-amber)' : 'var(--chalk)' }}
+            >
+              {pct(probSpotWins)}
+            </span>
+            <span className="cc-kpi__sub">
+              forecast {usd(rateDistribution.mean)}/T average, ±{usd(rateDistribution.sd * 1.645).replace('$', '')} at 90%
+            </span>
+          </div>
+
+          <div className="cc-kpi">
+            <span className="cc-kpi__label">Locked CVC rate</span>
+            <span className="cc-kpi__val mono" style={{ color: CVC_HUE }}>{usd(lockedRateUsdPerMt)}<i>/T</i></span>
+            <span className="cc-kpi__sub">
+              {inputs.cvcDiscountPct.toFixed(1)}% off today's {usd(marketRateUsdPerMt)}/T market
+            </span>
+          </div>
+        </div>
+
+        {/* ⑤ The two pictures ────────────────────────────────────────────── */}
+        <div className="cc-charts">
+          <div className="card cc-chart-card">
+            <div className="cc-chart-head">
+              <p className="card-title">Cumulative programme cost</p>
+              <div className="cc-legend">
+                <span className="cc-legend__item">
+                  <i style={{ background: SPOT_HUE }} />Spot at forecast
+                </span>
+                <span className="cc-legend__item">
+                  <i style={{ background: CVC_HUE }} />CVC locked
+                </span>
+              </div>
+            </div>
+            <CumulativeChart result={result} />
+            <p className="cc-chart-note">
+              Shaded band prices the spot programme at the floor and ceiling of the
+              forecast's 90% interval. Spot lands anywhere from {spotVersusLock(band.lowDeltaCr)} than
+              the lock to {spotVersusLock(band.highDeltaCr)}.
+            </p>
+          </div>
+
+          <div className="card cc-chart-card">
+            <div className="cc-chart-head">
+              <p className="card-title">Where the forecast puts the average rate</p>
+              <div className="cc-legend">
+                <span className="cc-legend__item">
+                  <i style={{ background: SPOT_HUE }} />Spot wins {pct(probSpotWins)}
+                </span>
+                <span className="cc-legend__item">
+                  <i style={{ background: CVC_HUE }} />CVC wins {pct(1 - probSpotWins)}
+                </span>
+              </div>
+            </div>
+            <BreakEvenChart result={result} />
+            <p className="cc-chart-note">
+              The curve peaks at the forecast's {usd(rateDistribution.mean)}/T programme average, and
+              the area either side of the break-even is the probability that side comes out cheaper.
+              Forecast misses travel together across months, so averaging {inputs.numVoyages} voyages
+              narrows the spread far less than independent draws would.
+            </p>
+          </div>
+        </div>
+
+        {/* ⑥ Voyage by voyage ────────────────────────────────────────────── */}
         <div className="card cc-table-card">
-          <p className="card-title">Line-item Breakdown — INR Crores</p>
-          <table className="cc-table">
-            <thead>
-              <tr>
-                <th>Cost Component</th>
-                <th className="cc-table__col-spot">Spot (×{s.numVoyages})</th>
-                <th className="cc-table__col-cvc">CVC</th>
-                <th className="cc-table__col-delta">Delta</th>
-              </tr>
-            </thead>
-            <tbody>
-              {lineItems.map(item => {
-                const d = +(item.spot - item.cvc).toFixed(2);
-                const isSaving = d > 0;
-                const isLighterage = item.label === 'Lighterage';
-                return (
-                  <tr key={item.label} className={isLighterage ? 'cc-table__row--lighterage' : ''}>
-                    <td className="cc-table__label">
-                      {item.label}
-                      {isLighterage && <span className="cc-table__flag">constraint engine</span>}
-                    </td>
-                    <td className="cc-table__spot mono">
-                      {item.spot === 0 ? '—' : `₹${item.spot.toFixed(2)}`}
-                    </td>
-                    <td className="cc-table__cvc mono">
-                      {item.cvc === 0 ? '—' : `₹${item.cvc.toFixed(2)}`}
-                    </td>
-                    <td
-                      className="cc-table__delta mono"
-                      style={{ color: d === 0 ? 'var(--text-muted)' : isSaving ? 'var(--accent-green)' : 'var(--accent-red)' }}
-                    >
-                      {d === 0 ? '—' : `${isSaving ? '-' : '+'}₹${Math.abs(d).toFixed(2)}`}
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-            <tfoot>
-              <tr className="cc-table__total">
-                <td>Total</td>
-                <td className="mono">₹{spotTotal.toFixed(2)}</td>
-                <td className="mono">₹{cvcTotal.toFixed(2)}</td>
-                <td
-                  className="mono"
-                  style={{ color: delta >= 0 ? 'var(--accent-green)' : 'var(--accent-red)' }}
-                >
-                  {delta >= 0 ? '-' : '+'}₹{Math.abs(delta).toFixed(2)} Cr
-                </td>
-              </tr>
-            </tfoot>
-          </table>
+          <p className="card-title">Voyage by voyage — {result.loadPortName} → {result.dischargePortName}</p>
+          <div className="cc-table-scroll">
+            <table className="cc-table">
+              <thead>
+                <tr>
+                  <th>Voyage</th>
+                  <th>Departs</th>
+                  <th className="cc-num">Forecast rate</th>
+                  <th className="cc-num cc-col-spot">Spot cost</th>
+                  <th className="cc-num cc-col-cvc">CVC cost</th>
+                  <th className="cc-num">CVC vs spot</th>
+                </tr>
+              </thead>
+              <tbody>
+                {spot.voyages.map((v, i) => {
+                  const c = cvc.voyages[i];
+                  const d = (c.total - v.total) * USD_INR / 1e7;
+                  return (
+                    <tr key={v.index}>
+                      <td className="cc-table__label">V{v.index}</td>
+                      <td className="cc-muted">{v.label}</td>
+                      <td className="cc-num mono">{usd(v.rateUsdPerMt)}/T</td>
+                      <td className="cc-num mono cc-col-spot">{cr(v.total * USD_INR / 1e7)}</td>
+                      <td className="cc-num mono cc-col-cvc">{cr(c.total * USD_INR / 1e7)}</td>
+                      <td className="cc-num mono" style={{ color: d <= 0 ? 'var(--sig-green)' : 'var(--sig-red)' }}>
+                        {vsSpot(d)}
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+              <tfoot>
+                <tr className="cc-table__total">
+                  <td colSpan={2}>Programme</td>
+                  <td className="cc-num">{usd(spot.avgRateUsdPerMt)}/T avg</td>
+                  <td className="cc-num">{cr(spot.totalCr)}</td>
+                  <td className="cc-num">{cr(cvc.totalCr)}</td>
+                  <td className="cc-num" style={{ color: cvcWins ? 'var(--sig-green)' : 'var(--sig-red)' }}>
+                    {vsSpot(-deltaCr)}
+                  </td>
+                </tr>
+              </tfoot>
+            </table>
+          </div>
         </div>
 
-        {/* ④ Sliders — at the bottom, everything above recomputes live ─── */}
+        {/* ⑦ Where the money actually goes ───────────────────────────────── */}
+        <div className="card cc-table-card">
+          <p className="card-title">Line-item breakdown — whole programme, INR crores</p>
+          <div className="cc-table-scroll">
+            <table className="cc-table">
+              <thead>
+                <tr>
+                  <th>Cost component</th>
+                  <th className="cc-num cc-col-spot">Spot</th>
+                  <th className="cc-num cc-col-cvc">CVC</th>
+                  <th className="cc-num">CVC vs spot</th>
+                </tr>
+              </thead>
+              <tbody>
+                {lineItems.map(item => {
+                  const d = item.cvcCr - item.spotCr;
+                  const inert = Math.abs(d) < 0.005;
+                  return (
+                    <tr key={item.label}>
+                      <td className="cc-table__label">
+                        <span>{item.label}</span>
+                        {item.note && <span className="cc-note">{item.note}</span>}
+                      </td>
+                      <td className="cc-num mono cc-col-spot">{cr(item.spotCr)}</td>
+                      <td className="cc-num mono cc-col-cvc">{cr(item.cvcCr)}</td>
+                      <td
+                        className="cc-num mono"
+                        style={{ color: inert ? 'var(--chalk-faint)' : d < 0 ? 'var(--sig-green)' : 'var(--sig-red)' }}
+                      >
+                        {inert ? 'cancels' : vsSpot(d)}
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+              <tfoot>
+                <tr className="cc-table__total">
+                  <td>Total</td>
+                  <td className="cc-num">{cr(spot.totalCr)}</td>
+                  <td className="cc-num">{cr(cvc.totalCr)}</td>
+                  <td className="cc-num" style={{ color: cvcWins ? 'var(--sig-green)' : 'var(--sig-red)' }}>
+                    {vsSpot(-deltaCr)}
+                  </td>
+                </tr>
+              </tfoot>
+            </table>
+          </div>
+        </div>
+
+        {/* ⑧ Move the assumptions, watch everything above move ───────────── */}
         <div className="card cc-controls">
-          <p className="card-title">Controls — drag sliders to recompute live</p>
+          <p className="card-title">Assumptions — everything above recomputes live</p>
           <div className="cc-sliders">
+            <Slider
+              id="cc-slider-discount"
+              label="CVC negotiated discount"
+              value={inputs.cvcDiscountPct}
+              display={`${inputs.cvcDiscountPct.toFixed(1)}%`}
+              min={0}
+              max={25}
+              step={0.5}
+              minLabel="0%"
+              maxLabel="25%"
+              hint={
+                inputs.cvcDiscountPct < 3 ? 'thin — the lock is buying certainty, not price'
+                  : inputs.cvcDiscountPct > 15 ? 'unusually deep — check the owner can perform'
+                    : 'typical range for a multi-voyage commitment'
+              }
+              onChange={v => set('cvcDiscountPct', v)}
+            />
 
-            {/* Bunker price slider */}
-            <div className="cc-slider-group">
-              <div className="cc-slider-header">
-                <label className="label" htmlFor="slider-bunker">Bunker Price (VLSFO)</label>
-                <span className="cc-slider-val mono">${bunkerPrice}/MT</span>
-              </div>
-              <input
-                id="slider-bunker"
-                type="range"
-                className="cc-slider"
-                min={400}
-                max={900}
-                step={10}
-                value={bunkerPrice}
-                onChange={e => setBunkerPrice(Number(e.target.value))}
-              />
-              <div className="cc-slider-range">
-                <span>$400</span>
-                <span className="cc-slider-hint">
-                  {bunkerPrice < 500 ? 'Low — favours spot' : bunkerPrice > 750 ? 'High — CVC hedges risk' : 'Moderate'}
-                </span>
-                <span>$900</span>
-              </div>
-            </div>
+            <Slider
+              id="cc-slider-bunker"
+              label="Bunker price (VLSFO)"
+              value={inputs.bunkerPriceUsd}
+              display={`$${inputs.bunkerPriceUsd}/T`}
+              min={350}
+              max={950}
+              step={10}
+              minLabel="$350"
+              maxLabel="$950"
+              hint={
+                inputs.bunkerPriceUsd === BUNKER_BASIS_USD ? `at the $${BUNKER_BASIS_USD} contract basis — no adjustment either way`
+                  : inputs.bunkerPriceUsd > BUNKER_BASIS_USD ? 'above basis — the CVC clause absorbs most of it'
+                    : 'below basis — spot keeps the whole credit'
+              }
+              onChange={v => set('bunkerPriceUsd', v)}
+            />
 
-            {/* CVC discount slider */}
-            <div className="cc-slider-group">
-              <div className="cc-slider-header">
-                <label className="label" htmlFor="slider-cvc">CVC Negotiated Discount</label>
-                <span className="cc-slider-val mono">{cvcDiscount.toFixed(1)}%</span>
-              </div>
-              <input
-                id="slider-cvc"
-                type="range"
-                className="cc-slider"
-                min={2}
-                max={25}
-                step={0.5}
-                value={cvcDiscount}
-                onChange={e => setCvcDiscount(Number(e.target.value))}
-              />
-              <div className="cc-slider-range">
-                <span>2%</span>
-                <span className="cc-slider-hint">
-                  {cvcDiscount < 8 ? 'Weak negotiation' : cvcDiscount > 18 ? 'Strong discount secured' : 'Typical market discount'}
-                </span>
-                <span>25%</span>
-              </div>
-            </div>
+            <Slider
+              id="cc-slider-demurrage"
+              label="Demurrage rate"
+              value={inputs.demurrageUsdPerDay}
+              display={`$${(inputs.demurrageUsdPerDay / 1000).toFixed(0)}k/day`}
+              min={5_000}
+              max={60_000}
+              step={1_000}
+              minLabel="$5k"
+              maxLabel="$60k"
+              hint={`${profile.waitDaysSpot.toFixed(1)} d expected wait on spot, ${profile.waitDaysCvc.toFixed(1)} d on a nominated window`}
+              onChange={v => set('demurrageUsdPerDay', v)}
+            />
+          </div>
+        </div>
 
+        {/* ⑨ What the costing assumed ────────────────────────────────────── */}
+        <div className="card cc-profile">
+          <p className="card-title"><Ship size={12} /> Voyage profile behind these numbers</p>
+          <div className="cc-profile__grid">
+            <div><span>Sailed distance</span><b className="mono">{Math.round(profile.distanceNm).toLocaleString('en-IN')} nm</b></div>
+            <div><span>Sea days, round trip</span><b className="mono">{profile.seaDays.toFixed(1)} d</b></div>
+            <div><span>Cargo operations</span><b className="mono">{profile.cargoDays.toFixed(1)} d</b></div>
+            <div><span>Expected wait, spot</span><b className="mono">{profile.waitDaysSpot.toFixed(1)} d</b></div>
+            <div><span>Round trip</span><b className="mono">{profile.roundTripDays.toFixed(1)} d</b></div>
+            <div><span>Bunkers burnt</span><b className="mono">{Math.round(profile.bunkerTonnes).toLocaleString('en-IN')} T</b></div>
+            <div><span>Programme span</span><b className="mono">{Math.round(profile.roundTripDays * inputs.numVoyages)} d</b></div>
+            <div><span>Conversion</span><b className="mono">₹{USD_INR}/$</b></div>
           </div>
         </div>
 
