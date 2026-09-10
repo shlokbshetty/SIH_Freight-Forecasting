@@ -103,4 +103,3 @@ Loading: Newcastle, Gladstone and Abbot Point in Australia, Hampton Roads in the
 
 AIS is the Automatic Identification System, the transponder every commercial ship broadcasts its position on, and the basis of any live vessel tracking. GIS means geographic information system, in practice the map. SIH is the Smart India Hackathon, and this is problem statement 26006. A crore is ten million rupees, written Cr, and a lakh is one hundred thousand. On the software side it is React with TypeScript, built by Vite, charts by Recharts, map by Leaflet, icons by Lucide, linting by oxlint.
 
-Want this as a page you can keep open beside the code and share with the team?
