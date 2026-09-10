@@ -1,58 +1,133 @@
-import { TrendingUp, TrendingDown, Ship, AlertTriangle, ArrowRight, Lock } from 'lucide-react';
+import { useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useCharter } from '../store/charterStore';
+import {
+  AlertTriangle, ArrowRight, CalendarClock, Ship, TrendingDown, TrendingUp,
+} from 'lucide-react';
+import { apiGet } from '../lib/api';
+import { useApiResource } from '../hooks/useApiResource';
+import { useDataStatus } from '../context/dataStatus';
+import { fallbackMarketSeries, fallbackPorts } from '../lib/fallbacks';
+import type { PortsResponse } from '../lib/apiTypes';
+import type { BundledSeries } from '../lib/fallbacks';
+import DataOriginNotice from '../components/common/DataOriginNotice';
+import { VESSEL_CLASSES, VESSEL_SPECS } from '../data/vessels';
 import './CommandCenter.css';
 
-const STATS = [
-  { label: 'BDI (Today)',    value: '1,842',  delta: '+2.4%', up: true,  id: 'stat-bdi'       },
-  { label: 'Avg Spot Rate',  value: '$16.8/T', delta: '-0.3%', up: false, id: 'stat-spot'      },
-  { label: 'Active Voyages', value: '7',       delta: '+1',    up: true,  id: 'stat-voyages'   },
-  { label: 'CVC Savings',    value: '₹4.2 Cr', delta: 'This month', up: true, id: 'stat-savings' },
-];
+/** Metrics the home screen leads with. */
+const HEADLINE_METRICS = [
+  'baltic.bdi',
+  'bunker.vlsfo.singapore',
+  'macro.usdinr',
+  'commodity.coal.api2',
+  'freight.rate.handysize',
+  'freight.rate.supramax',
+  'freight.rate.panamax',
+  'freight.rate.capesize',
+].join(',');
 
-const ALERTS = [
-  { id: 'alert-1', type: 'red',   msg: 'Haldia tidal window closes in 4h — Panamax congestion.' },
-  { id: 'alert-2', type: 'amber', msg: 'Capesize rates up 8% on Newcastle route — review CVC.' },
-  { id: 'alert-3', type: 'green', msg: 'Paradip Berth 6 available — 2 day wait window.' },
-];
+function lastAndPrior(points: { value: number }[] | undefined, back = 5) {
+  if (!points || points.length === 0) return { now: null as number | null, move: null as number | null };
+  const now = points[points.length - 1].value;
+  const prior = points[Math.max(0, points.length - 1 - back)]?.value;
+  const move = prior && prior !== 0 ? ((now - prior) / prior) * 100 : null;
+  return { now, move };
+}
 
-const TICKER_ITEMS = [
-  'BDI 1842 ▲2.4%',
-  'Handysize $12.3/T',
-  'Supramax $16.8/T',
-  'Panamax $19.4/T',
-  'Capesize $28.7/T',
-  'Bunker VLSFO $624/T',
-  'USD/INR 83.42',
-  'Paradip — Berths 3/8 Available',
-  'Vizag — Berths 5/12 Available',
-  'Gangavaram — Clear',
-  'Haldia — High Congestion',
-];
+/** Standing congestion level to a signal tone, used when no live wait is known. */
+function capTone(level: string): string {
+  return level === 'high' ? 'red' : level === 'medium' ? 'amber' : 'green';
+}
 
 export default function CommandCenter() {
   const navigate = useNavigate();
-  const { lockedCharters } = useCharter();
+  const { sources, online } = useDataStatus();
 
-  // Fallback static charters when none are locked yet
-  const STATIC_CHARTERS = [
-    { vessel: 'MV Coastal Star', cls: 'Supramax', route: 'Newcastle → Paradip', eta: '14 Sep', badge: 'En Route' as const },
-    { vessel: 'MV Dhamra Eagle', cls: 'Panamax',  route: 'Gladstone → Vizag',   eta: '18 Sep', badge: 'Berthed'  as const },
-    { vessel: 'MV Bay Pioneer',  cls: 'Handysize', route: 'Beira → Gopalpur',    eta: '22 Sep', badge: 'En Route' as const },
+  const market = useApiResource<BundledSeries>(
+    () => apiGet<BundledSeries>(`/api/series?metrics=${HEADLINE_METRICS}&days=30`),
+    fallbackMarketSeries(),
+    [],
+  );
+
+  const ports = useApiResource<PortsResponse>(
+    () => apiGet<PortsResponse>('/api/ports'),
+    fallbackPorts(),
+    [],
+  );
+
+  const s = market.data.series;
+
+  const bdi = lastAndPrior(s['baltic.bdi']?.points);
+  const bunker = lastAndPrior(s['bunker.vlsfo.singapore']?.points);
+  const fx = lastAndPrior(s['macro.usdinr']?.points);
+  const coal = lastAndPrior(s['commodity.coal.api2']?.points);
+
+  const rates = useMemo(
+    () => VESSEL_CLASSES.map(cls => ({
+      cls,
+      color: VESSEL_SPECS[cls].color,
+      ...lastAndPrior(s[`freight.rate.${cls.toLowerCase()}`]?.points),
+    })),
+    [s],
+  );
+
+  const fmt = (n: number | null, digits = 2, prefix = '') =>
+    n === null ? '—' : `${prefix}${n.toLocaleString('en-US', { minimumFractionDigits: digits, maximumFractionDigits: digits })}`;
+
+  const stats = [
+    { id: 'stat-bdi', label: `Baltic Dry${s['baltic.bdi']?.is_proxy ? ' (proxy)' : ''}`, value: fmt(bdi.now, 0), move: bdi.move },
+    { id: 'stat-bunker', label: 'VLSFO Singapore', value: fmt(bunker.now, 0, '$'), move: bunker.move, invert: true },
+    { id: 'stat-coal', label: 'Thermal coal API2', value: fmt(coal.now, 1, '$'), move: coal.move },
+    { id: 'stat-fx', label: 'USD/INR', value: fmt(fx.now, 2, '₹'), move: fx.move, invert: true },
   ];
 
-  const displayCharters = lockedCharters.length > 0
-    ? lockedCharters.map(c => ({ vessel: c.vessel, cls: c.cls, route: c.route, eta: c.eta, badge: c.badge }))
-    : STATIC_CHARTERS;
+  // Ports worth looking at now: longest queues first.
+  const watchlist = useMemo(() => {
+    // Rank on observed waiting when the congestion feed is up, and on the
+    // port's standing congestion level when it is not, so the panel still
+    // ranks something rather than emptying out.
+    const level: Record<string, number> = { high: 3, medium: 2, low: 1 };
+    return [...ports.data.discharge_ports]
+      .sort((a, b) => {
+        const byWait = (b.live.wait_days ?? -1) - (a.live.wait_days ?? -1);
+        if (byWait !== 0) return byWait;
+        return (level[b.congestion_level] ?? 0) - (level[a.congestion_level] ?? 0);
+      })
+      .slice(0, 5);
+  }, [ports.data]);
+
+  const staleSources = sources.filter(x => x.is_stale).map(x => x.source);
+
+  const buildTicker = () => {
+    const items: string[] = [];
+    if (bdi.now !== null) items.push(`BDI ${bdi.now.toFixed(0)}${bdi.move !== null ? ` ${bdi.move >= 0 ? '▲' : '▼'}${Math.abs(bdi.move).toFixed(1)}%` : ''}`);
+    for (const r of rates) if (r.now !== null) items.push(`${r.cls} $${r.now.toFixed(2)}/T`);
+    if (bunker.now !== null) items.push(`VLSFO $${bunker.now.toFixed(0)}/T`);
+    if (fx.now !== null) items.push(`USD/INR ${fx.now.toFixed(2)}`);
+    for (const p of ports.data.discharge_ports) {
+      if (p.live.wait_days !== null) items.push(`${p.name} — ${p.live.wait_days.toFixed(1)}d wait`);
+    }
+    if (items.length) return items;
+    return [
+      'Bundled reference data',
+      'Backend offline',
+      'Berth detail unavailable',
+      'Forecasts unfitted',
+      'Start the backend for live rates',
+    ];
+  };
+
+  const ticker = buildTicker();
 
   return (
     <div className="cc">
       {/* Ticker */}
       <div className="cc__ticker">
-        <span className="cc__ticker-label">LIVE</span>
+        <span className={`cc__ticker-label ${online ? '' : 'cc__ticker-label--off'}`}>
+          {online ? 'LIVE' : 'CACHE'}
+        </span>
         <div className="ticker-wrap">
           <div className="ticker-inner">
-            {[...TICKER_ITEMS, ...TICKER_ITEMS].map((item, i) => (
+            {[...ticker, ...ticker].map((item, i) => (
               <span key={i} className="cc__ticker-item">{item}</span>
             ))}
           </div>
@@ -60,109 +135,113 @@ export default function CommandCenter() {
       </div>
 
       <div className="page-content">
+        <div className="cc__notice">
+          <DataOriginNotice
+            origin={market.origin}
+            error={market.error}
+            stale={staleSources}
+            bundledLabel="Backend unreachable. Market figures are unavailable; port reference data is bundled."
+          />
+        </div>
+
         {/* Stat cards */}
-        <div className="grid-4" style={{ marginBottom: '1.5rem' }}>
-          {STATS.map(s => (
-            <div className="card" key={s.id} id={s.id}>
-              <p className="card-title">{s.label}</p>
-              <p className="stat-value">{s.value}</p>
-              <p className={`stat-delta ${s.up ? 'up' : 'down'}`}>
-                {s.up ? <TrendingUp size={12} style={{ display: 'inline', marginRight: 4 }} />
-                      : <TrendingDown size={12} style={{ display: 'inline', marginRight: 4 }} />}
-                {s.delta}
-              </p>
-            </div>
-          ))}
+        <div className="grid-4 cc__stats">
+          {stats.map(st => {
+            const up = (st.move ?? 0) >= 0;
+            // For a cost line, up is bad news, so the colour follows meaning
+            // rather than direction.
+            const good = st.invert ? !up : up;
+            return (
+              <div className="card" key={st.id} id={st.id}>
+                <p className="card-title">{st.label}</p>
+                <p className="stat-value">{st.value}</p>
+                <p className={`stat-delta ${good ? 'up' : 'down'}`}>
+                  {st.move === null ? (
+                    <span className="cc__no-move">no recent move</span>
+                  ) : (
+                    <>
+                      {up ? <TrendingUp size={12} style={{ display: 'inline', marginRight: 4 }} />
+                          : <TrendingDown size={12} style={{ display: 'inline', marginRight: 4 }} />}
+                      {Math.abs(st.move).toFixed(1)}% on the week
+                    </>
+                  )}
+                </p>
+              </div>
+            );
+          })}
         </div>
 
         <div className="cc__grid">
-          {/* Alerts */}
-          <div className="card">
-            <p className="card-title">Active Alerts</p>
-            <div className="cc__alerts">
-              {ALERTS.map(a => (
-                <div key={a.id} id={a.id} className={`cc__alert cc__alert--${a.type}`}>
-                  <AlertTriangle size={14} className="cc__alert-icon" />
-                  <span>{a.msg}</span>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          {/* Quick nav */}
-          <div className="card">
-            <p className="card-title">Quick Actions</p>
-            <div className="cc__quick-actions">
-              {[
-                { label: 'Open Port Map',        path: '/map',       icon: '🗺️' },
-                { label: 'Freight Forecast',      path: '/forecast',  icon: '📈' },
-                { label: 'Match Vessel',          path: '/matcher',   icon: '⚓' },
-                { label: 'Compare Contracts',     path: '/contracts', icon: '📄' },
-              ].map(({ label, path, icon }) => (
-                <button
-                  key={path}
-                  id={`qa-${path.replace('/', '')}`}
-                  className="cc__quick-btn"
-                  onClick={() => navigate(path)}
-                >
-                  <span className="cc__quick-icon">{icon}</span>
-                  <span>{label}</span>
-                  <ArrowRight size={14} className="cc__quick-arrow" />
-                </button>
-              ))}
-            </div>
-          </div>
-
           {/* Market summary */}
           <div className="card cc__market">
-            <p className="card-title">Market Summary — Vessel Class Rates</p>
+            <p className="card-title">Route rates by vessel class</p>
             <div className="cc__rate-rows">
-              {[
-                { cls: 'Handysize', rate: '$12.3/T', delta: '+0.4', color: 'var(--accent-green)' },
-                { cls: 'Supramax',  rate: '$16.8/T', delta: '-0.3', color: 'var(--accent-blue)'  },
-                { cls: 'Panamax',   rate: '$19.4/T', delta: '+1.1', color: 'var(--accent-amber)' },
-                { cls: 'Capesize',  rate: '$28.7/T', delta: '+2.3', color: 'var(--accent-red)'   },
-              ].map(({ cls, rate, delta, color }) => (
-                <div className="cc__rate-row" key={cls} id={`rate-${cls.toLowerCase()}`}>
-                  <div className="cc__rate-dot" style={{ background: color, boxShadow: `0 0 6px ${color}` }} />
-                  <span className="cc__rate-cls">{cls}</span>
-                  <span className="cc__rate-val mono">{rate}</span>
-                  <span className={`cc__rate-delta ${parseFloat(delta) >= 0 ? 'up' : 'down'}`}>
-                    {parseFloat(delta) >= 0 ? '▲' : '▼'} {Math.abs(parseFloat(delta))}
+              {rates.map(r => (
+                <div className="cc__rate-row" key={r.cls}>
+                  <span className="cc__rate-dot" style={{ background: r.color }} />
+                  <span className="cc__rate-cls">{r.cls}</span>
+                  <span className="cc__rate-val mono">
+                    {r.now === null ? '—' : `$${r.now.toFixed(2)}/T`}
+                  </span>
+                  <span className={`cc__rate-move mono ${(r.move ?? 0) >= 0 ? 'down' : 'up'}`}>
+                    {r.move === null ? '' : `${r.move >= 0 ? '+' : '−'}${Math.abs(r.move).toFixed(1)}%`}
                   </span>
                 </div>
               ))}
             </div>
+            <p className="cc__market-note">
+              Per-tonne freight falls as the ship gets bigger: a Capesize spreads one voyage over
+              five times the cargo a Handysize carries. A move against you is a rate rise, so the
+              arrows follow cost, not price.
+            </p>
           </div>
 
-          {/* Active charters */}
-          <div className="card">
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.75rem' }}>
-              <p className="card-title" style={{ marginBottom: 0 }}>Active Charters</p>
-              {lockedCharters.length > 0 && (
-                <span className="badge badge-green" style={{ fontSize: '0.6rem' }}>
-                  <Lock size={9} /> {lockedCharters.length} locked
-                </span>
-              )}
-            </div>
-            <div className="cc__charters">
-              {displayCharters.map((c) => (
-                <div className="cc__charter" key={c.vessel}>
-                  <div className="cc__charter-icon"><Ship size={14} /></div>
-                  <div className="cc__charter-info">
-                    <span className="cc__charter-name">{c.vessel}</span>
-                    <span className="cc__charter-route">{c.route}</span>
-                  </div>
-                  <div>
-                    <span className={`badge ${c.badge === 'Berthed' ? 'badge-green' : c.badge === 'Locked' ? 'badge-blue' : 'badge-blue'}`}>
-                      {c.badge === 'Locked' && <Lock size={9} />}
-                      {c.badge}
-                    </span>
-                    <div style={{ fontSize: '0.68rem', color: 'var(--text-muted)', marginTop: 4, textAlign: 'right' }}>ETA {c.eta}</div>
-                  </div>
-                </div>
-              ))}
-            </div>
+          {/* Port watchlist */}
+          <div className="card cc__watch">
+            <p className="card-title">Ports worth watching</p>
+            {watchlist.length === 0 ? (
+              <p className="cc__no-move">No congestion data. Start the backend to populate it.</p>
+            ) : (
+              <div className="cc__watch-rows">
+                {watchlist.map(p => {
+                  const wait = p.live.wait_days;
+                  const tone = wait === null ? 'muted' : wait >= 5 ? 'red' : wait >= 3 ? 'amber' : 'green';
+                  return (
+                    <button key={p.id} className="cc__watch-row" onClick={() => navigate('/matcher')}>
+                      <span className={`dot dot-${tone === 'muted' ? 'amber' : tone}`} />
+                      <span className="cc__watch-name">{p.name}</span>
+                      <span className="cc__watch-berths mono">
+                        {p.berths.length > 0 ? `${p.berths.length} berths` : '—'}
+                      </span>
+                      <span className={`cc__watch-wait mono cc__watch-wait--${wait === null ? capTone(p.congestion_level) : tone}`}>
+                        {wait === null ? p.congestion_level : `${wait.toFixed(1)} d`}
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
+            )}
+            <p className="cc__market-note">
+              Waiting days come from the congestion feed. A port that discharges fast but queues for
+              a week is not a fast port.
+            </p>
+          </div>
+
+          {/* Quick actions */}
+          <div className="card cc__quick-actions">
+            <p className="card-title">Where to go next</p>
+            {[
+              { label: 'Price a multi-voyage programme', to: '/contracts', icon: Ship },
+              { label: 'Check when to fix', to: '/timing', icon: CalendarClock },
+              { label: 'Match a cargo to a berth', to: '/matcher', icon: ArrowRight },
+              { label: 'Review risks and data health', to: '/risk', icon: AlertTriangle },
+            ].map(a => (
+              <button key={a.to} className="cc__quick-btn" onClick={() => navigate(a.to)}>
+                <span className="cc__quick-icon"><a.icon size={14} /></span>
+                {a.label}
+                <ArrowRight size={13} className="cc__quick-arrow" />
+              </button>
+            ))}
           </div>
         </div>
       </div>

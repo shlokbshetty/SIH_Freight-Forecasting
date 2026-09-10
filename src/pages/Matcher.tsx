@@ -1,149 +1,60 @@
-import { useState, useMemo } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { DISCHARGE_PORTS, LOADING_PORTS, getPortStatus } from '../data/ports';
-import { VESSEL_SPECS, VESSEL_CLASSES, type VesselClass } from '../data/vessels';
-import { Search, CheckCircle, AlertCircle, XCircle, ChevronRight, Info, ArrowRight } from 'lucide-react';
-import { useCharter } from '../store/charterStore';
+import { useMemo, useState } from 'react';
+import {
+  AlertCircle, Anchor, CheckCircle, ChevronRight, Ship, XCircle,
+} from 'lucide-react';
+import { apiGet, apiPost } from '../lib/api';
+import { useApiResource } from '../hooks/useApiResource';
+import { fallbackMatch, fallbackPorts } from '../lib/fallbacks';
+import type { BerthOutcome, MatchResponse, PortsResponse, VesselVerdict } from '../lib/apiTypes';
+import DataOriginNotice from '../components/common/DataOriginNotice';
+import { VESSEL_SPECS } from '../data/vessels';
 import './Matcher.css';
 
-const COMMODITIES = ['Coal', 'Coking Coal', 'Iron Ore', 'Bauxite', 'Fertilizer', 'Grain', 'Limestone'];
+const COMMODITIES = [
+  { key: 'thermal_coal', label: 'Thermal Coal' },
+  { key: 'coking_coal', label: 'Coking Coal' },
+  { key: 'iron_ore', label: 'Iron Ore' },
+  { key: 'bauxite', label: 'Bauxite' },
+  { key: 'limestone', label: 'Limestone' },
+  { key: 'fertiliser', label: 'Fertiliser' },
+  { key: 'general', label: 'General Cargo' },
+];
 
-// ─── Verdict types ────────────────────────────────────────────────────────────
-type Verdict = 'available' | 'constrained' | 'blocked';
-
-interface VesselVerdict {
-  cls: VesselClass;
-  verdict: Verdict;
-  reason: string;
-  subReasons: string[];
-  draftMargin: number;
-  loaMargin: number;
-  estimatedCost: number; // USD / MT mock
-}
-
-// ─── Compute verdicts ─────────────────────────────────────────────────────────
-function computeVerdicts(
-  dischargeId: string,
-  tonnage: number,
-): VesselVerdict[] {
-  const port = DISCHARGE_PORTS.find(p => p.id === dischargeId);
-  if (!port) return [];
-
-  return VESSEL_CLASSES.map(cls => {
-    const spec = VESSEL_SPECS[cls];
-
-    // Check tonnage fits vessel DWT range
-    const tonFit = tonnage >= spec.dwt.min * 0.6 && tonnage <= spec.dwt.max;
-
-    const draftOk = spec.ladenDraftM <= port.currentDraftM;
-    const loaOk   = spec.loaM       <= port.maxLoaM;
-    const draftMargin = port.currentDraftM - spec.ladenDraftM;
-    const loaMargin   = port.maxLoaM       - spec.loaM;
-
-    const status = getPortStatus(port, spec.ladenDraftM, spec.loaM);
-
-    const subReasons: string[] = [];
-
-    if (!draftOk) {
-      subReasons.push(`Draft ${spec.ladenDraftM}m laden vs ${port.name} ${port.currentDraftM}m limit — ${Math.abs(draftMargin).toFixed(1)}m over`);
-    } else if (draftMargin < 1.0) {
-      subReasons.push(`Only ${draftMargin.toFixed(1)}m draft margin — tidal window critical`);
-    }
-
-    if (!loaOk) {
-      subReasons.push(`LOA ${spec.loaM}m exceeds ${port.name} max ${port.maxLoaM}m`);
-    }
-
-    if (port.lighterageRequired) {
-      subReasons.push('Lighterage required at Sagar/Sandheads before proceeding');
-    }
-
-    if (port.congestionLevel === 'high') {
-      subReasons.push(`High congestion — estimated ${port.berthsAvailable === 0 ? '5+' : '3–5'} day wait`);
-    } else if (port.berthsAvailable === 0) {
-      subReasons.push('No berths currently available');
-    }
-
-    if (!tonFit) {
-      subReasons.push(`${tonnage.toLocaleString()} T cargo ${tonnage < spec.dwt.min * 0.6 ? 'too small' : 'exceeds'} ${cls} range`);
-    }
-
-    let verdict: Verdict;
-    let reason: string;
-
-    if (!draftOk || !loaOk) {
-      verdict = 'blocked';
-      reason = subReasons[0];
-    } else if (status === 'constrained' || !tonFit || draftMargin < 1.0) {
-      verdict = 'constrained';
-      reason = subReasons[0] ?? 'Port conditions constrained for this vessel';
-    } else {
-      verdict = 'available';
-      reason = `${cls} fits ${port.name} — ${draftMargin.toFixed(1)}m draft margin, ${loaMargin}m LOA clearance`;
-    }
-
-    // Mock cost: base varies by class, adjusted for port congestion
-    const baseCost: Record<VesselClass, number> = {
-      Handysize: 14.2,
-      Supramax:  16.8,
-      Panamax:   18.4,
-      Capesize:  22.1,
-    };
-    const congestionPenalty = port.congestionLevel === 'high' ? 1.4 : port.congestionLevel === 'medium' ? 0.6 : 0;
-    const estimatedCost = +(baseCost[cls] + congestionPenalty + (Math.random() * 0.5 - 0.25)).toFixed(1);
-
-    return { cls, verdict, reason, subReasons, draftMargin, loaMargin, estimatedCost };
-  });
-}
-
-// ─── Verdict config ───────────────────────────────────────────────────────────
-const VERDICT_CONFIG = {
-  available:   { icon: CheckCircle,  label: 'Available',   cls: 'verdict--green',  iconCls: 'verdict-icon--green'  },
-  constrained: { icon: AlertCircle,  label: 'Constrained', cls: 'verdict--amber',  iconCls: 'verdict-icon--amber'  },
-  blocked:     { icon: XCircle,      label: 'Blocked',     cls: 'verdict--red',    iconCls: 'verdict-icon--red'    },
+const OUTCOME_UI: Record<BerthOutcome, { icon: typeof CheckCircle; label: string; cls: string }> = {
+  ACCEPT_ALL_TIDE: { icon: CheckCircle, label: 'Berths all tide', cls: 'green' },
+  ACCEPT_HIGH_TIDE_ONLY: { icon: AlertCircle, label: 'High tide only', cls: 'amber' },
+  REJECT: { icon: XCircle, label: 'Cannot berth', cls: 'red' },
 };
 
-const RANK_ORDER: Record<Verdict, number> = { available: 0, constrained: 1, blocked: 2 };
-
-// ─── Component ────────────────────────────────────────────────────────────────
 export default function Matcher() {
-  const navigate = useNavigate();
-  const { setSelectedVessel } = useCharter();
-  const [tonnage,    setTonnage]    = useState(55000);
-  const [commodity,  setCommodity]  = useState('Coal');
-  const [originId,   setOriginId]   = useState('newcastle');
   const [dischargeId, setDischargeId] = useState('paradip');
-  const [targetMonth, setTargetMonth] = useState(() => {
-    const d = new Date();
-    d.setMonth(d.getMonth() + 1);
-    return d.toISOString().slice(0, 7);
-  });
-  const [searched, setSearched] = useState(false);
+  const [commodity, setCommodity] = useState('thermal_coal');
+  const [tonnage, setTonnage] = useState(55_000);
+  const [expanded, setExpanded] = useState<string | null>(null);
 
-  const origin = LOADING_PORTS.find(p => p.id === originId);
-  const discharge = DISCHARGE_PORTS.find(p => p.id === dischargeId);
+  const ports = useApiResource<PortsResponse>(
+    () => apiGet<PortsResponse>('/api/ports'),
+    fallbackPorts(),
+    [],
+  );
 
-  const verdicts = useMemo(() => {
-    if (!searched) return [];
-    return computeVerdicts(dischargeId, tonnage)
-      .sort((a, b) => RANK_ORDER[a.verdict] - RANK_ORDER[b.verdict]);
-  }, [searched, dischargeId, tonnage]);
-
-  const handleSearch = () => setSearched(true);
-  const handleChange = () => setSearched(false);
-
-  function handleSelectVessel(v: VesselVerdict) {
-    setSelectedVessel({
-      cls: v.cls,
-      originId,
-      dischargeId,
-      tonnage,
+  const match = useApiResource<MatchResponse>(
+    () => apiPost<MatchResponse>('/api/match', {
+      discharge_port_id: dischargeId,
       commodity,
-      targetMonth,
-      estimatedCost: v.estimatedCost,
-    });
-    navigate('/voyage-editor');
-  }
+      cargo_tonnes: tonnage,
+    }),
+    fallbackMatch(dischargeId, tonnage, commodity),
+    [dischargeId, commodity, tonnage],
+  );
+
+  const port = useMemo(
+    () => ports.data.discharge_ports.find(p => p.id === dischargeId) ?? ports.data.discharge_ports[0],
+    [ports.data, dischargeId],
+  );
+
+  const res = match.data;
+  const workable = res.recommendations.filter(r => r.outcome !== 'REJECT').length;
 
   return (
     <div className="matcher-page">
@@ -151,247 +62,214 @@ export default function Matcher() {
       <aside className="matcher-panel">
         <div className="matcher-panel__header">
           <h3>Cargo Details</h3>
-          <p>Enter cargo specs to find compatible vessels</p>
+          <p>Every class is run through the berth resolver</p>
         </div>
 
         <div className="matcher-form">
-          {/* Tonnage */}
           <div className="matcher-field">
             <label className="label" htmlFor="input-tonnage">Cargo Tonnage (MT)</label>
             <input
-              id="input-tonnage"
-              type="number"
-              className="input"
-              value={tonnage}
-              min={10000}
-              max={200000}
-              step={5000}
-              onChange={e => { setTonnage(Number(e.target.value)); handleChange(); }}
+              id="input-tonnage" type="number" className="input"
+              value={tonnage} min={10000} max={250000} step={5000}
+              onChange={e => setTonnage(Math.max(1000, Number(e.target.value) || 0))}
             />
             <span className="matcher-field__hint">
-              {tonnage.toLocaleString()} MT — typical {tonnage < 45000 ? 'Handysize' : tonnage < 65000 ? 'Supramax' : tonnage < 85000 ? 'Panamax' : 'Capesize'} range
+              {tonnage.toLocaleString('en-US')} MT — typical{' '}
+              {tonnage < 45000 ? 'Handysize' : tonnage < 65000 ? 'Supramax' : tonnage < 85000 ? 'Panamax' : 'Capesize'} parcel
             </span>
           </div>
 
-          {/* Commodity */}
           <div className="matcher-field">
             <label className="label" htmlFor="input-commodity">Commodity</label>
-            <select
-              id="input-commodity"
-              className="select"
-              value={commodity}
-              onChange={e => { setCommodity(e.target.value); handleChange(); }}
-            >
-              {COMMODITIES.map(c => <option key={c}>{c}</option>)}
+            <select id="input-commodity" className="select" value={commodity}
+              onChange={e => setCommodity(e.target.value)}>
+              {COMMODITIES.map(c => <option key={c.key} value={c.key}>{c.label}</option>)}
             </select>
+            <span className="matcher-field__hint">
+              Berths are equipped for specific cargoes; this decides which are eligible at all.
+            </span>
           </div>
 
-          {/* Origin */}
-          <div className="matcher-field">
-            <label className="label" htmlFor="input-origin">Origin Port</label>
-            <select
-              id="input-origin"
-              className="select"
-              value={originId}
-              onChange={e => { setOriginId(e.target.value); handleChange(); }}
-            >
-              {LOADING_PORTS.map(p => (
-                <option key={p.id} value={p.id}>{p.name} ({p.country})</option>
-              ))}
-            </select>
-          </div>
-
-          {/* Discharge */}
           <div className="matcher-field">
             <label className="label" htmlFor="input-discharge">Discharge Port</label>
-            <select
-              id="input-discharge"
-              className="select"
-              value={dischargeId}
-              onChange={e => { setDischargeId(e.target.value); handleChange(); }}
-            >
-              {DISCHARGE_PORTS.map(p => (
+            <select id="input-discharge" className="select" value={dischargeId}
+              onChange={e => setDischargeId(e.target.value)}>
+              {ports.data.discharge_ports.map(p => (
                 <option key={p.id} value={p.id}>{p.name}</option>
               ))}
             </select>
           </div>
-
-          {/* Target month */}
-          <div className="matcher-field">
-            <label className="label" htmlFor="input-month">Target Month</label>
-            <input
-              id="input-month"
-              type="month"
-              className="input"
-              value={targetMonth}
-              onChange={e => { setTargetMonth(e.target.value); handleChange(); }}
-            />
-          </div>
-
-          {/* Port info card */}
-          {discharge && (
-            <div className="matcher-port-info">
-              <div className="matcher-port-info__row">
-                <Info size={13} />
-                <span className="matcher-port-info__name">{discharge.name}</span>
-              </div>
-              <div className="matcher-port-info__stats">
-                <span>Draft <b>{discharge.currentDraftM}m</b></span>
-                <span>LOA <b>{discharge.maxLoaM}m</b></span>
-                <span>Berths <b>{discharge.berthsAvailable}/{discharge.berthCount}</b></span>
-                <span
-                  style={{
-                    color: discharge.congestionLevel === 'high' ? 'var(--accent-red)'
-                         : discharge.congestionLevel === 'medium' ? 'var(--accent-amber)'
-                         : 'var(--accent-green)',
-                  }}
-                >
-                  {discharge.congestionLevel.charAt(0).toUpperCase() + discharge.congestionLevel.slice(1)} congestion
-                </span>
-              </div>
-              {discharge.notes && <p className="matcher-port-info__note">{discharge.notes}</p>}
-            </div>
-          )}
-
-          <button
-            id="btn-match-vessels"
-            className="btn btn-primary matcher-search-btn"
-            onClick={handleSearch}
-          >
-            <Search size={15} />
-            Match Vessels
-          </button>
         </div>
+
+        {/* Port summary, now berth aware */}
+        {port && (
+          <div className="matcher-port-info">
+            <div className="matcher-port-info__name">{port.name}</div>
+            <div className="matcher-port-info__stats">
+              <div className="matcher-port-info__row">
+                <span>Berths on file</span>
+                <b className="mono">{port.berths.length || '—'}</b>
+              </div>
+              <div className="matcher-port-info__row">
+                <span>Deepest all tide</span>
+                <b className="mono">{port.deepest_berth_m ? `${port.deepest_berth_m.toFixed(1)} m` : '—'}</b>
+              </div>
+              <div className="matcher-port-info__row">
+                <span>Deepest on tide</span>
+                <b className="mono">{port.deepest_on_tide_m ? `${port.deepest_on_tide_m.toFixed(1)} m` : '—'}</b>
+              </div>
+              <div className="matcher-port-info__row">
+                <span>Berth queue</span>
+                <b className="mono" style={{
+                  color: (port.live.wait_days ?? 0) >= 5 ? 'var(--sig-red)'
+                    : (port.live.wait_days ?? 0) >= 3 ? 'var(--sig-amber)' : 'var(--sig-green)',
+                }}>
+                  {port.live.wait_days !== null ? `${port.live.wait_days.toFixed(1)} d` : '—'}
+                </b>
+              </div>
+              {port.live.vessels_at_anchor !== null && (
+                <div className="matcher-port-info__row">
+                  <span>At anchor</span>
+                  <b className="mono">{port.live.vessels_at_anchor}</b>
+                </div>
+              )}
+            </div>
+            {port.notes && <p className="matcher-port-info__note">{port.notes}</p>}
+            {port.lighterage_nodes.length > 0 && (
+              <p className="matcher-port-info__note">
+                Lighterage available at {port.lighterage_nodes.map(n => n.node_name).join(', ')}.
+              </p>
+            )}
+          </div>
+        )}
       </aside>
 
-      {/* ── Right panel ────────────────────────── */}
-      <div className="matcher-results">
-        {!searched ? (
-          <div className="matcher-results__empty">
-            <span className="matcher-results__empty-icon">⚓</span>
-            <p>Fill in cargo details and click <b>Match Vessels</b> to see ranked recommendations.</p>
-          </div>
-        ) : (
-          <>
-            <div className="matcher-results__header">
-              <div>
-                <h3>Vessel Recommendations</h3>
-                <p>
-                  {origin?.name} → {discharge?.name} · {tonnage.toLocaleString()} MT {commodity} · {targetMonth}
-                </p>
-              </div>
-              <span className="matcher-results__count">
-                {verdicts.filter(v => v.verdict === 'available').length} of {verdicts.length} viable
-              </span>
-            </div>
+      {/* ── Results ────────────────────────────── */}
+      <section className="matcher-results">
+        <div className="matcher-results__header">
+          <h3>
+            <Ship size={14} /> Berth resolution
+            <span className="matcher-results__count">{workable} of {res.recommendations.length} workable</span>
+          </h3>
+        </div>
 
-            <div className="matcher-cards">
-              {verdicts.map((v, i) => {
-                const spec     = VESSEL_SPECS[v.cls];
-                const cfg      = VERDICT_CONFIG[v.verdict];
-                const VIcon    = cfg.icon;
-                const isBlocked = v.verdict === 'blocked';
-                const rank      = i + 1;
+        <div className="matcher-notice">
+          <DataOriginNotice
+            origin={match.origin}
+            error={match.error}
+            stale={res.sources_stale}
+            bundledLabel="Backend unreachable. Falling back to a single-draft check per port; no berth detail."
+          />
+        </div>
 
-                return (
-                  <div
-                    key={v.cls}
-                    id={`vessel-card-${v.cls.toLowerCase()}`}
-                    className={`matcher-card ${isBlocked ? 'matcher-card--blocked' : ''}`}
-                    style={!isBlocked ? { borderColor: `${spec.color}33` } : {}}
-                  >
-                    {/* Rank badge */}
-                    {!isBlocked && (
-                      <div
-                        className="matcher-card__rank"
-                        style={{ background: spec.color, boxShadow: `0 0 10px ${spec.color}55` }}
-                      >
-                        #{rank}
-                      </div>
-                    )}
+        <div className="matcher-cards">
+          {res.recommendations.map((v, i) => (
+            <VerdictCard
+              key={v.vessel_class}
+              verdict={v}
+              rank={i + 1}
+              expanded={expanded === v.vessel_class}
+              onToggle={() => setExpanded(expanded === v.vessel_class ? null : v.vessel_class)}
+            />
+          ))}
+        </div>
 
-                    <div className="matcher-card__top">
-                      {/* Class name */}
-                      <div className="matcher-card__cls-row">
-                        <span
-                          className="matcher-card__cls"
-                          style={{ color: isBlocked ? 'var(--text-muted)' : spec.color }}
-                        >
-                          {v.cls}
-                        </span>
-                        <span className="matcher-card__dwt">
-                          {spec.dwt.min.toLocaleString()}–{spec.dwt.max.toLocaleString()} DWT
-                        </span>
-                      </div>
-
-                      {/* Verdict badge */}
-                      <div className={`matcher-verdict ${cfg.cls}`}>
-                        <VIcon size={13} className={cfg.iconCls} />
-                        <span>{cfg.label}</span>
-                      </div>
-                    </div>
-
-                    {/* Primary reason */}
-                    <p className="matcher-card__reason">{v.reason}</p>
-
-                    {/* Sub-reasons */}
-                    {v.subReasons.length > 0 && (
-                      <ul className="matcher-card__subreasons">
-                        {v.subReasons.map((r, ri) => (
-                          <li key={ri}>
-                            <ChevronRight size={11} />
-                            {r}
-                          </li>
-                        ))}
-                      </ul>
-                    )}
-
-                    {/* Spec grid */}
-                    <div className="matcher-card__specs">
-                      <div className="matcher-card__spec">
-                        <span>Laden Draft</span>
-                        <b style={{ color: v.draftMargin < 0 ? 'var(--accent-red)' : v.draftMargin < 1 ? 'var(--accent-amber)' : 'var(--text-primary)' }}>
-                          {spec.ladenDraftM}m
-                        </b>
-                      </div>
-                      <div className="matcher-card__spec">
-                        <span>Draft Margin</span>
-                        <b style={{ color: v.draftMargin < 0 ? 'var(--accent-red)' : v.draftMargin < 1 ? 'var(--accent-amber)' : 'var(--accent-green)' }}>
-                          {v.draftMargin > 0 ? '+' : ''}{v.draftMargin.toFixed(1)}m
-                        </b>
-                      </div>
-                      <div className="matcher-card__spec">
-                        <span>LOA</span>
-                        <b>{spec.loaM}m</b>
-                      </div>
-                      <div className="matcher-card__spec">
-                        <span>Est. Freight</span>
-                        <b className="mono">${v.estimatedCost}/MT</b>
-                      </div>
-                    </div>
-
-                    {!isBlocked && (
-                      <div className="matcher-card__description">
-                        {spec.description}
-                      </div>
-                    )}
-
-                    {!isBlocked && (
-                      <button
-                        id={`btn-select-${v.cls.toLowerCase()}`}
-                        className="btn btn-primary matcher-card__select-btn"
-                        onClick={() => handleSelectVessel(v)}
-                      >
-                        Select Vessel <ArrowRight size={13} />
-                      </button>
-                    )}
-                  </div>
-                );
-              })}
-            </div>
-          </>
+        {res.provenance.caveat && (
+          <p className="matcher-provenance">
+            {res.provenance.caveat}
+            {res.provenance.source_dates.length > 0 && ` Compiled ${res.provenance.source_dates.join(', ')}.`}
+          </p>
         )}
+      </section>
+    </div>
+  );
+}
+
+// ─── One vessel class ─────────────────────────────────────────────────────────
+
+function VerdictCard({ verdict, rank, expanded, onToggle }: {
+  verdict: VesselVerdict; rank: number; expanded: boolean; onToggle: () => void;
+}) {
+  const ui = OUTCOME_UI[verdict.outcome];
+  const Icon = ui.icon;
+  const spec = VESSEL_SPECS[verdict.vessel_class];
+  const isBlocked = verdict.outcome === 'REJECT';
+
+  return (
+    <div className={`card matcher-card matcher-card--${ui.cls}`}>
+      <div className="matcher-card__top">
+        <span className="matcher-card__rank">{rank}</span>
+        <div className="matcher-card__cls-row">
+          <span className="matcher-card__cls" style={{ color: isBlocked ? 'var(--chalk-faint)' : spec.color }}>
+            {verdict.vessel_class}
+          </span>
+          <span className="matcher-card__dwt mono">
+            {verdict.laden_draft_m.toFixed(1)} m laden · {spec.loaM} m LOA
+          </span>
+        </div>
+        <span className={`matcher-verdict matcher-verdict--${ui.cls}`}>
+          <Icon size={13} /> {ui.label}
+        </span>
       </div>
+
+      <p className="matcher-card__reason">{verdict.reason}</p>
+
+      {verdict.berth && (
+        <div className="matcher-berth">
+          <div className="matcher-berth__head">
+            <b>{verdict.berth.berth_name}</b>
+            <span className="mono">{verdict.berth.berth_id}</span>
+          </div>
+          <div className="matcher-berth__grid">
+            <div><span>Operator</span><b>{verdict.berth.operator}</b></div>
+            <div><span>All-tide draft</span><b className="mono">{verdict.berth.draft_max_m.toFixed(1)} m</b></div>
+            <div><span>On tide</span><b className="mono">{verdict.berth.draft_max_on_tide_m.toFixed(1)} m</b></div>
+            <div><span>Discharge</span><b className="mono">{verdict.berth.discharge_rate_tpd.toLocaleString('en-US')} t/d</b></div>
+            <div><span>Turnaround</span><b className="mono">{verdict.turnaround_days?.toFixed(1) ?? '—'} d</b></div>
+            <div><span>Night work</span><b>{verdict.berth.night_restricted ? 'restricted' : 'unrestricted'}</b></div>
+          </div>
+          {verdict.berth.provenance.source_url && (
+            <a className="matcher-berth__src" href={verdict.berth.provenance.source_url}
+              target="_blank" rel="noreferrer">
+              source · {verdict.berth.provenance.source_date}
+            </a>
+          )}
+        </div>
+      )}
+
+      {verdict.lighterage && (
+        <div className="matcher-lighterage">
+          <Anchor size={13} />
+          <div>
+            <p>{verdict.lighterage.narrative}</p>
+            <div className="matcher-lighterage__nums mono">
+              {verdict.lighterage.tonnes_to_lighten.toLocaleString('en-US')} T ·{' '}
+              {verdict.lighterage.barge_trips} barge trips ·{' '}
+              +{verdict.lighterage.added_days.toFixed(1)} d ·{' '}
+              ${Math.round(verdict.lighterage.cost_usd).toLocaleString('en-US')}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {verdict.considered.length > 0 && (
+        <>
+          <button className="matcher-expand" onClick={onToggle}>
+            <ChevronRight size={12} className={expanded ? 'matcher-expand__caret--open' : ''} />
+            {expanded ? 'Hide' : 'Show'} all {verdict.considered.length} berths considered
+          </button>
+          {expanded && (
+            <div className="matcher-considered">
+              {verdict.considered.map(c => (
+                <div key={c.berth_id} className={`matcher-considered__row matcher-considered__row--${OUTCOME_UI[c.outcome].cls}`}>
+                  <span className="mono matcher-considered__id">{c.berth_id}</span>
+                  <span className="matcher-considered__reason">{c.reason}</span>
+                </div>
+              ))}
+            </div>
+          )}
+        </>
+      )}
     </div>
   );
 }

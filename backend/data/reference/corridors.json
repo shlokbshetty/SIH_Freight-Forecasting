@@ -1,0 +1,11 @@
+{
+  "note": "Bounding boxes for the trade lanes feeding East Coast India. Deliberately coarse: they are for counting tonnage in a lane, not for routing.",
+  "source_date": "2026-09-10",
+  "corridors": [
+    { "id": "au_east_to_eci",  "name": "East Australia to East Coast India", "bbox": { "lat_min": -35.0, "lat_max":  -8.0, "lon_min": 105.0, "lon_max": 155.0 } },
+    { "id": "indonesia_to_eci","name": "Kalimantan to East Coast India",     "bbox": { "lat_min":  -8.0, "lat_max":   8.0, "lon_min":  95.0, "lon_max": 120.0 } },
+    { "id": "moz_to_eci",      "name": "Mozambique to East Coast India",     "bbox": { "lat_min": -28.0, "lat_max":   0.0, "lon_min":  32.0, "lon_max":  60.0 } },
+    { "id": "bay_of_bengal",   "name": "Bay of Bengal approach",             "bbox": { "lat_min":   5.0, "lat_max":  22.5, "lon_min":  80.0, "lon_max":  95.0 } },
+    { "id": "eci_anchorages",  "name": "East Coast India anchorages",        "bbox": { "lat_min":  15.0, "lat_max":  22.5, "lon_min":  82.0, "lon_max":  89.0 } }
+  ]
+}

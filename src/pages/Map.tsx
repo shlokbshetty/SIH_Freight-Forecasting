@@ -14,8 +14,8 @@
 import { useEffect, useRef, useState, useCallback } from 'react';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
-import { fetchPorts, evaluate, horizonToVoyages } from '../lib/api';
-import type { PortResponse, EvaluationResult } from '../lib/api';
+import { fetchPorts, evaluate, horizonToVoyages } from '../lib/evaluateApi';
+import type { PortResponse, EvaluationResult } from '../lib/evaluateApi';
 import './Map.css';
 
 // ─── Maritime Shipping Waypoints & Regions ────────────────────────────────────

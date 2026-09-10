@@ -45,26 +45,19 @@ export default function VoyageEditor() {
   const navigate = useNavigate();
   const { selectedVessel, lockCharter } = useCharter();
 
-  // If landed here without selection, bounce back
-  if (!selectedVessel) {
-    return (
-      <div className="ve-empty">
-        <Ship size={40} className="ve-empty__icon" />
-        <p>No vessel selected. Go back to Vessel Matcher.</p>
-        <button className="btn btn-primary" onClick={() => navigate('/matcher')}>
-          <ArrowLeft size={14} /> Back to Matcher
-        </button>
-      </div>
-    );
-  }
-
+  // Every hook runs before the early return below.
+  //
+  // The guard used to sit above these, which meant the eight useState calls only
+  // ran when a vessel was selected. React identifies hooks by call order, so the
+  // first render that arrives with a selection after one without would line the
+  // state up against the wrong slots and crash the component.
   const vessel = selectedVessel;
-  const spec = VESSEL_SPECS[vessel.cls];
+  const spec = VESSEL_SPECS[vessel?.cls ?? 'Supramax'];
 
   // ─── Voyage inputs (editable) ───────────────────────────────────────────────
-  const [originId, setOriginId] = useState(vessel.originId);
-  const [dischargeId, setDischargeId] = useState(vessel.dischargeId);
-  const [cargoTonnes, setCargoTonnes] = useState(vessel.tonnage);
+  const [originId, setOriginId] = useState(vessel?.originId ?? DEFAULT_PROGRAMME.loadPortId);
+  const [dischargeId, setDischargeId] = useState(vessel?.dischargeId ?? DEFAULT_PROGRAMME.dischargePortId);
+  const [cargoTonnes, setCargoTonnes] = useState(vessel?.tonnage ?? DEFAULT_PROGRAMME.cargoTonnes);
   const [numVoyages, setNumVoyages] = useState(3);
   const [cvcDiscount, setCvcDiscount] = useState(DEFAULT_PROGRAMME.cvcDiscountPct);
   const [bunker, setBunker] = useState(DEFAULT_PROGRAMME.bunkerPriceUsd);
@@ -79,15 +72,32 @@ export default function VoyageEditor() {
     ...DEFAULT_PROGRAMME,
     loadPortId: originId,
     dischargePortId: dischargeId,
-    vesselClass: vessel.cls,
+    vesselClass: vessel?.cls ?? 'Supramax',
     cargoTonnes,
     numVoyages,
     cvcDiscountPct: cvcDiscount,
     bunkerPriceUsd: bunker,
     demurrageUsdPerDay: demurrage,
-  }), [originId, dischargeId, vessel.cls, cargoTonnes, numVoyages, cvcDiscount, bunker, demurrage]);
+  }), [originId, dischargeId, vessel?.cls, cargoTonnes, numVoyages, cvcDiscount, bunker, demurrage]);
 
   const result = useMemo(() => evaluate(inputs), [inputs]);
+
+  // Now that every hook has run, it is safe to bail out.
+  if (!vessel) {
+    return (
+      <div className="ve-empty">
+        <Ship size={40} className="ve-empty__icon" />
+        <p>No vessel selected. Go back to Vessel Matcher.</p>
+        <button className="btn btn-primary" onClick={() => navigate('/matcher')}>
+          <ArrowLeft size={14} /> Back to Matcher
+        </button>
+      </div>
+    );
+  }
+  // Captured after the guard so closures below keep the narrowed type: TypeScript
+  // does not narrow a captured binding inside a function declaration.
+  const activeVessel = vessel;
+
   const { spot, cvc, deltaCr, cvcWins, probSpotWins, breakEvenUsdPerMt, lockedRateUsdPerMt } = result;
 
   // ─── Port constraints summary ─────────────────────────────────────────────
@@ -103,7 +113,7 @@ export default function VoyageEditor() {
     const charter: LockedCharter = {
       id: `charter-${Date.now()}`,
       vessel: `MV ${origin?.name ?? '?'} Trader`,
-      cls: vessel.cls,
+      cls: activeVessel.cls,
       route: `${origin?.name ?? '?'} → ${discharge?.name ?? '?'}`,
       eta: eta.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' }),
       badge: 'Locked',

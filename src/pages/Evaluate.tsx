@@ -16,8 +16,8 @@ import {
   ComposedChart, Area, Line, XAxis, YAxis, CartesianGrid,
   Tooltip, ResponsiveContainer, Legend,
 } from 'recharts';
-import { evaluate, fetchPorts, horizonToVoyages } from '../lib/api';
-import type { EvaluationResult, PortResponse } from '../lib/api';
+import { evaluate, fetchPorts, horizonToVoyages } from '../lib/evaluateApi';
+import type { EvaluationResult, PortResponse } from '../lib/evaluateApi';
 import './Evaluate.css';
 
 // ─── Constants ────────────────────────────────────────────────────────────────
