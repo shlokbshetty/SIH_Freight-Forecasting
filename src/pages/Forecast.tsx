@@ -5,6 +5,7 @@ import {
 } from 'recharts';
 import { MOCK_FORECAST, type ForecastHorizon, type ForecastPoint } from '../data/mockForecast';
 import { VESSEL_SPECS, VESSEL_CLASSES, type VesselClass } from '../data/vessels';
+import { useTheme } from '../store/themeStore';
 import './Forecast.css';
 
 const HORIZONS: ForecastHorizon[] = ['1M', '3M', '6M'];
@@ -83,6 +84,10 @@ export default function Forecast() {
   const [horizon, setHorizon] = useState<ForecastHorizon>('3M');
 
   const spec = VESSEL_SPECS[vesselClass];
+  const { theme } = useTheme();
+  const gridColor = theme === 'dark' ? 'rgba(255,255,255,0.04)' : 'rgba(0,0,0,0.05)';
+  const axisColor = theme === 'dark' ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.08)';
+  const tickColor = theme === 'dark' ? '#4a5568' : '#6b7280';
 
   const rawData = useMemo(
     () => MOCK_FORECAST[vesselClass][horizon],
@@ -203,19 +208,19 @@ export default function Forecast() {
 
               <CartesianGrid
                 strokeDasharray="3 6"
-                stroke="rgba(255,255,255,0.04)"
+                stroke={gridColor}
                 vertical={false}
               />
 
               <XAxis
                 dataKey="date"
-                tick={{ fill: '#4a5568', fontSize: 11, fontFamily: 'Inter' }}
+                tick={{ fill: tickColor, fontSize: 11, fontFamily: 'Inter' }}
                 tickLine={false}
-                axisLine={{ stroke: 'rgba(255,255,255,0.06)' }}
+                axisLine={{ stroke: axisColor }}
                 interval={Math.floor(chartData.length / 8)}
               />
               <YAxis
-                tick={{ fill: '#4a5568', fontSize: 11, fontFamily: 'Inter' }}
+                tick={{ fill: tickColor, fontSize: 11, fontFamily: 'Inter' }}
                 tickLine={false}
                 axisLine={false}
                 tickFormatter={v => `$${v}`}
