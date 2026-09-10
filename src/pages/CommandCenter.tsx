@@ -1,5 +1,6 @@
-import { TrendingUp, TrendingDown, Ship, AlertTriangle, ArrowRight } from 'lucide-react';
+import { TrendingUp, TrendingDown, Ship, AlertTriangle, ArrowRight, Lock } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { useCharter } from '../store/charterStore';
 import './CommandCenter.css';
 
 const STATS = [
@@ -31,6 +32,18 @@ const TICKER_ITEMS = [
 
 export default function CommandCenter() {
   const navigate = useNavigate();
+  const { lockedCharters } = useCharter();
+
+  // Fallback static charters when none are locked yet
+  const STATIC_CHARTERS = [
+    { vessel: 'MV Coastal Star', cls: 'Supramax', route: 'Newcastle → Paradip', eta: '14 Sep', badge: 'En Route' as const },
+    { vessel: 'MV Dhamra Eagle', cls: 'Panamax',  route: 'Gladstone → Vizag',   eta: '18 Sep', badge: 'Berthed'  as const },
+    { vessel: 'MV Bay Pioneer',  cls: 'Handysize', route: 'Beira → Gopalpur',    eta: '22 Sep', badge: 'En Route' as const },
+  ];
+
+  const displayCharters = lockedCharters.length > 0
+    ? lockedCharters.map(c => ({ vessel: c.vessel, cls: c.cls, route: c.route, eta: c.eta, badge: c.badge }))
+    : STATIC_CHARTERS;
 
   return (
     <div className="cc">
@@ -124,13 +137,16 @@ export default function CommandCenter() {
 
           {/* Active charters */}
           <div className="card">
-            <p className="card-title">Active Charters</p>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.75rem' }}>
+              <p className="card-title" style={{ marginBottom: 0 }}>Active Charters</p>
+              {lockedCharters.length > 0 && (
+                <span className="badge badge-green" style={{ fontSize: '0.6rem' }}>
+                  <Lock size={9} /> {lockedCharters.length} locked
+                </span>
+              )}
+            </div>
             <div className="cc__charters">
-              {[
-                { vessel: 'MV Coastal Star', cls: 'Supramax', route: 'Newcastle → Paradip', eta: '14 Sep', badge: 'En Route' },
-                { vessel: 'MV Dhamra Eagle', cls: 'Panamax',  route: 'Gladstone → Vizag',   eta: '18 Sep', badge: 'Berthed'  },
-                { vessel: 'MV Bay Pioneer',  cls: 'Handysize', route: 'Beira → Gopalpur',    eta: '22 Sep', badge: 'En Route' },
-              ].map((c) => (
+              {displayCharters.map((c) => (
                 <div className="cc__charter" key={c.vessel}>
                   <div className="cc__charter-icon"><Ship size={14} /></div>
                   <div className="cc__charter-info">
@@ -138,7 +154,8 @@ export default function CommandCenter() {
                     <span className="cc__charter-route">{c.route}</span>
                   </div>
                   <div>
-                    <span className={`badge ${c.badge === 'Berthed' ? 'badge-green' : 'badge-blue'}`}>
+                    <span className={`badge ${c.badge === 'Berthed' ? 'badge-green' : c.badge === 'Locked' ? 'badge-blue' : 'badge-blue'}`}>
+                      {c.badge === 'Locked' && <Lock size={9} />}
                       {c.badge}
                     </span>
                     <div style={{ fontSize: '0.68rem', color: 'var(--text-muted)', marginTop: 4, textAlign: 'right' }}>ETA {c.eta}</div>

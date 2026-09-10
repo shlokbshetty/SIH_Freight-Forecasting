@@ -1,6 +1,7 @@
 import { useLocation } from 'react-router-dom';
 import { useEffect, useState } from 'react';
-import { Bell, Clock } from 'lucide-react';
+import { Bell, Clock, Sun, Moon } from 'lucide-react';
+import { useTheme } from '../../store/themeStore';
 import './Header.css';
 
 const ROUTE_META: Record<string, { title: string; sub: string }> = {
@@ -16,6 +17,7 @@ export default function Header() {
   const { pathname } = useLocation();
   const meta = ROUTE_META[pathname] ?? ROUTE_META['/'];
   const [time, setTime] = useState(new Date());
+  const { theme, toggle } = useTheme();
 
   useEffect(() => {
     const t = setInterval(() => setTime(new Date()), 1000);
@@ -43,6 +45,17 @@ export default function Header() {
           <span className="app-header__clock-time mono">{timeStr}</span>
           <span className="app-header__clock-date">{dateStr} IST</span>
         </div>
+
+        {/* Theme toggle */}
+        <button
+          className="app-header__theme-toggle"
+          id="header-theme-toggle"
+          title={`Switch to ${theme === 'dark' ? 'light' : 'dark'} mode`}
+          onClick={toggle}
+          aria-label="Toggle theme"
+        >
+          {theme === 'dark' ? <Sun size={15} /> : <Moon size={15} />}
+        </button>
 
         {/* Alerts bell */}
         <button className="app-header__bell" id="header-alerts-btn" title="View alerts">
