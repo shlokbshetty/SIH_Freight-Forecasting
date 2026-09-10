@@ -1,0 +1,3 @@
+node_id,node_name,port_served,lat,lng,max_draft_m,lighterage_rate_tpd,barge_capacity_t,transfer_cost_usd_per_t,mobilisation_usd,source_url,source_date
+SND-01,Sandheads Anchorage,Haldia,21.0500,88.1500,21.0,12000,8000,4.60,65000,https://www.smportkolkata.shipping.gov.in/haldia-dock-complex,2026-09-10
+SGR-01,Sagar Roads Anchorage,Haldia,21.6400,88.0600,12.0,10000,6000,4.20,58000,https://www.smportkolkata.shipping.gov.in/haldia-dock-complex,2026-09-10

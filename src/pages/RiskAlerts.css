@@ -1,0 +1,135 @@
+.risk-page { display: flex; flex-direction: column; gap: 1rem; }
+
+.risk-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+}
+.risk-head h1 { font-size: 1rem; font-weight: 600; }
+.risk-head p  { font-size: 0.75rem; color: var(--chalk-dim); margin-top: 0.15rem; }
+
+.risk-section { display: flex; flex-direction: column; gap: 0.5rem; }
+
+.risk-section__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+.risk-section__head .card-title { margin-bottom: 0; display: flex; align-items: center; gap: 0.35rem; }
+
+.risk-count {
+  display: inline-block;
+  margin-left: 0.35rem;
+  padding: 0.05rem 0.35rem;
+  border-radius: 99px;
+  background: var(--deck-raised);
+  color: var(--chalk);
+  font-family: var(--font-mono);
+}
+
+.risk-provenance { font-size: 0.62rem; color: var(--chalk-faint); }
+
+/* ── Alerts ─────────────────────────────────────────── */
+.risk-list { display: flex; flex-direction: column; gap: 0.5rem; }
+
+.risk-item { display: flex; gap: 0.85rem; align-items: flex-start; }
+
+.risk-item--high   { border-left: 3px solid var(--sig-red); }
+.risk-item--medium { border-left: 3px solid var(--sig-amber); }
+.risk-item--low    { border-left: 3px solid var(--sig-green); }
+
+.risk-item__icon {
+  width: 34px; height: 34px;
+  border-radius: var(--radius);
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+}
+.risk-item__icon--high   { background: var(--sig-red-dim);   color: var(--sig-red); }
+.risk-item__icon--medium { background: var(--sig-amber-dim); color: var(--sig-amber); }
+.risk-item__icon--low    { background: var(--sig-green-dim); color: var(--sig-green); }
+
+.risk-item__body { flex: 1; min-width: 0; }
+.risk-item__head { display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.3rem; flex-wrap: wrap; }
+.risk-item__title { font-weight: 600; font-size: 0.85rem; color: var(--chalk); }
+.risk-item__detail { font-size: 0.78rem; color: var(--chalk-dim); line-height: 1.5; }
+.risk-item__source { font-size: 0.6rem; color: var(--chalk-faint); margin-top: 0.35rem; }
+
+.risk-empty { display: flex; gap: 0.85rem; align-items: flex-start; color: var(--chalk-dim); }
+.risk-empty svg { color: var(--sig-green); flex-shrink: 0; margin-top: 2px; }
+.risk-empty b { color: var(--chalk); font-size: 0.85rem; display: block; margin-bottom: 0.2rem; }
+.risk-empty p { font-size: 0.76rem; line-height: 1.5; }
+
+/* ── Source table ───────────────────────────────────── */
+.risk-table-card { overflow: hidden; padding: 0; }
+.risk-table-scroll { overflow-x: auto; }
+
+.risk-table { width: 100%; border-collapse: collapse; font-size: 0.76rem; }
+.risk-table thead tr { border-bottom: 1px solid var(--rule-strong); }
+.risk-table th {
+  padding: 0.55rem 0.85rem;
+  text-align: left;
+  font-size: 0.6rem;
+  font-weight: 600;
+  color: var(--chalk-faint);
+  letter-spacing: 0.03em;
+  white-space: nowrap;
+}
+.risk-table th.risk-num, .risk-table td.risk-num { text-align: right; }
+.risk-table tbody tr { border-bottom: 1px solid var(--rule); }
+.risk-table tbody tr:last-child { border-bottom: none; }
+.risk-table tbody tr:hover { background: var(--deck); }
+.risk-table td { padding: 0.55rem 0.85rem; vertical-align: top; }
+
+.risk-table__name {
+  font-family: var(--font-mono);
+  font-weight: 600;
+  color: var(--chalk);
+  white-space: nowrap;
+}
+
+.risk-proxy {
+  display: inline-block;
+  margin-left: 0.4rem;
+  padding: 0.05rem 0.3rem;
+  border-radius: var(--radius-sm);
+  background: var(--sig-blue-dim);
+  color: var(--sig-blue);
+  border: 1px solid rgba(91,156,246,0.2);
+  font-size: 0.55rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+}
+
+.risk-table__label { color: var(--chalk-dim); max-width: 42ch; }
+.risk-table__note {
+  display: block;
+  font-size: 0.62rem;
+  color: var(--chalk-faint);
+  margin-top: 0.2rem;
+  line-height: 1.4;
+}
+.risk-table__error {
+  display: block;
+  font-size: 0.6rem;
+  color: var(--sig-red);
+  margin-top: 0.25rem;
+  max-width: 30ch;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.risk-offline { padding: 1rem 1.25rem; font-size: 0.78rem; color: var(--chalk-dim); line-height: 1.5; }
+
+.risk-footnote {
+  font-size: 0.68rem;
+  color: var(--chalk-faint);
+  line-height: 1.5;
+  padding-top: 0.25rem;
+}
+
+@media (max-width: 700px) {
+  .risk-head { flex-direction: column; }
+}
