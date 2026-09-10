@@ -1,0 +1,151 @@
+.sidebar {
+  width: var(--sidebar-w);
+  min-width: var(--sidebar-w);
+  background: var(--hull);
+  border-right: 1px solid var(--rule);
+  display: flex;
+  flex-direction: column;
+  transition: width var(--transition), min-width var(--transition);
+  position: relative;
+  z-index: 100;
+  overflow: hidden;
+}
+
+.sidebar--collapsed {
+  width: var(--sidebar-w-col);
+  min-width: var(--sidebar-w-col);
+}
+
+/* ── Wordmark ──────────────────────────── */
+.sidebar__logo {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 1rem 0.85rem 0.85rem;
+  border-bottom: 1px solid var(--rule);
+  flex-shrink: 0;
+}
+
+.sidebar__logo-mark {
+  width: 28px;
+  height: 28px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* SVG anchor mark in copper */
+.sidebar__logo-mark svg { color: var(--copper); }
+
+.sidebar__logo-text { overflow: hidden; }
+
+.sidebar__logo-name {
+  font-family: var(--font-display);
+  font-size: 1.05rem;
+  font-weight: 400;
+  color: var(--chalk);
+  white-space: nowrap;
+  display: block;
+  line-height: 1;
+}
+
+.sidebar__logo-sub {
+  font-size: 0.6rem;
+  font-weight: 500;
+  color: var(--chalk-faint);
+  white-space: nowrap;
+  display: block;
+  margin-top: 2px;
+  letter-spacing: 0.03em;
+}
+
+/* ── Section label ─────────────────────── */
+.sidebar__nav-label {
+  font-size: 0.6rem;
+  font-weight: 600;
+  color: var(--chalk-faint);
+  padding: 0.75rem 0.85rem 0.3rem;
+  white-space: nowrap;
+  letter-spacing: 0.04em;
+}
+
+/* ── Nav ───────────────────────────────── */
+.sidebar__nav {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  padding: 0.25rem 0;
+}
+
+.sidebar__item {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.5rem 0.85rem;
+  color: var(--chalk-dim);
+  cursor: pointer;
+  transition: background var(--transition), color var(--transition);
+  text-decoration: none;
+  white-space: nowrap;
+  overflow: hidden;
+}
+
+.sidebar__item:hover {
+  background: var(--deck);
+  color: var(--chalk);
+}
+
+.sidebar__item--active {
+  color: var(--chalk);
+  background: var(--deck);
+}
+
+/* Copper left rule on active */
+.sidebar__item--active::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 20%;
+  height: 60%;
+  width: 2px;
+  background: var(--copper);
+  border-radius: 0 1px 1px 0;
+}
+
+.sidebar__item-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  flex-shrink: 0;
+}
+
+.sidebar__item-label {
+  font-size: 0.8rem;
+  font-weight: 500;
+  flex: 1;
+}
+
+/* ── Collapse btn ──────────────────────── */
+.sidebar__collapse-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.6rem;
+  background: transparent;
+  border: none;
+  border-top: 1px solid var(--rule);
+  color: var(--chalk-faint);
+  cursor: pointer;
+  transition: background var(--transition), color var(--transition);
+  flex-shrink: 0;
+  width: 100%;
+}
+
+.sidebar__collapse-btn:hover {
+  background: var(--deck);
+  color: var(--chalk);
+}

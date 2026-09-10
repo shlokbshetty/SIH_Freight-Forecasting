@@ -1,0 +1,211 @@
+.map-page {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  overflow: hidden;
+}
+
+/* ── Controls ───────────────────────────── */
+.map-controls {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 0.5rem 1.25rem;
+  background: var(--hull);
+  border-bottom: 1px solid var(--rule);
+  flex-shrink: 0;
+  flex-wrap: wrap;
+}
+
+.map-controls__left {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  flex-wrap: wrap;
+}
+
+.map-controls__right {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.map-controls__label {
+  font-size: 0.65rem;
+  font-weight: 600;
+  color: var(--chalk-faint);
+  margin-right: 0.15rem;
+  white-space: nowrap;
+  letter-spacing: 0.02em;
+}
+
+/* ── Vessel buttons ─────────────────────── */
+.map-vessel-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 1px;
+  padding: 0.3rem 0.65rem;
+  background: var(--deck);
+  border: 1px solid var(--rule);
+  border-radius: var(--radius);
+  color: var(--chalk-dim);
+  cursor: pointer;
+  font-family: var(--font-ui);
+  transition: background var(--transition), color var(--transition), border-color var(--transition);
+  font-size: 0.78rem;
+  font-weight: 500;
+}
+
+.map-vessel-btn:hover { background: var(--deck-raised); color: var(--chalk); }
+.map-vessel-btn--active { font-weight: 600; }
+
+.map-vessel-btn__spec {
+  font-size: 0.6rem;
+  color: var(--chalk-faint);
+  font-family: var(--font-mono);
+}
+.map-vessel-btn--active .map-vessel-btn__spec { opacity: 0.7; color: inherit; }
+
+/* ── Legend ─────────────────────────────── */
+.map-legend {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 0.35rem 1.25rem;
+  background: var(--water);
+  border-bottom: 1px solid var(--rule);
+  flex-shrink: 0;
+}
+
+.map-legend__item {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.68rem;
+  color: var(--chalk-dim);
+}
+
+.map-legend__dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.map-legend__square {
+  width: 8px;
+  height: 8px;
+  border-radius: 1px;
+  background: rgba(91,156,246,0.3);
+  border: 1.5px solid var(--sig-blue);
+  flex-shrink: 0;
+}
+
+/* ── Vessel info strip ──────────────────── */
+.map-vessel-info {
+  display: flex;
+  align-items: center;
+  gap: 1.25rem;
+  padding: 0.35rem 1.25rem;
+  background: var(--hull);
+  border-bottom: 1px solid var(--rule);
+  font-size: 0.7rem;
+  color: var(--chalk-dim);
+  flex-shrink: 0;
+  flex-wrap: wrap;
+}
+
+.map-vessel-info__cls { font-weight: 700; font-size: 0.75rem; }
+.map-vessel-info span b { color: var(--chalk); font-weight: 600; font-family: var(--font-mono); }
+.map-vessel-info__desc {
+  color: var(--chalk-faint);
+  font-size: 0.65rem;
+  margin-left: auto;
+  max-width: 360px;
+}
+
+/* ── Map container ──────────────────────── */
+.map-container { flex: 1; min-height: 0; }
+
+/* ── Popup ──────────────────────────────── */
+.map-popup {
+  padding: 0.75rem 0.9rem;
+  font-family: var(--font-ui);
+}
+
+.map-popup__header {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  margin-bottom: 0.6rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid var(--rule);
+}
+
+.map-popup__header strong {
+  font-size: 0.85rem;
+  color: var(--chalk);
+  flex: 1;
+}
+
+.map-popup__dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.map-popup__badge {
+  font-size: 0.6rem;
+  font-weight: 600;
+  padding: 0.12rem 0.4rem;
+  border-radius: var(--radius-sm);
+  border: 1px solid;
+  white-space: nowrap;
+  font-family: var(--font-mono);
+}
+
+.map-popup__grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.4rem 0.6rem;
+}
+
+.map-popup__item {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.map-popup__item span {
+  font-size: 0.58rem;
+  color: var(--chalk-faint);
+  letter-spacing: 0.03em;
+}
+
+.map-popup__item b {
+  font-size: 0.72rem;
+  color: var(--chalk-dim);
+  font-weight: 500;
+  font-family: var(--font-mono);
+}
+
+.map-popup__warn {
+  margin-top: 0.5rem;
+  font-size: 0.68rem;
+  color: var(--sig-amber);
+  background: var(--sig-amber-dim);
+  border-radius: var(--radius-sm);
+  padding: 0.25rem 0.45rem;
+}
+
+.map-popup__note {
+  margin-top: 0.35rem;
+  font-size: 0.65rem;
+  color: var(--chalk-faint);
+  line-height: 1.4;
+}
+
+.btn--sm { padding: 0.3rem 0.65rem; font-size: 0.72rem; }

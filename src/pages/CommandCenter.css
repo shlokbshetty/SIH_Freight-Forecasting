@@ -1,0 +1,206 @@
+.cc {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+/* ── Ticker ─────────────────────────────── */
+.cc__ticker {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  background: var(--hull);
+  border-bottom: 1px solid var(--rule);
+  padding: 0.35rem 1.25rem;
+  flex-shrink: 0;
+}
+
+.cc__ticker-label {
+  font-size: 0.6rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  color: var(--sig-green);
+  background: var(--sig-green-dim);
+  border: 1px solid rgba(61,220,132,0.2);
+  padding: 0.1rem 0.4rem;
+  border-radius: var(--radius-sm);
+  flex-shrink: 0;
+  font-family: var(--font-mono);
+}
+
+.cc__ticker-item {
+  font-size: 0.7rem;
+  color: var(--chalk-dim);
+  font-family: var(--font-mono);
+  padding-right: 0.5rem;
+  border-right: 1px solid var(--rule);
+}
+
+/* ── Grid ───────────────────────────────── */
+.cc__grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.75rem;
+}
+
+/* ── Alerts ─────────────────────────────── */
+.cc__alerts {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+.cc__alert {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+  padding: 0.5rem 0.75rem;
+  font-size: 0.75rem;
+  line-height: 1.4;
+  border-bottom: 1px solid var(--rule);
+}
+
+.cc__alert:last-child { border-bottom: none; }
+.cc__alert-icon { flex-shrink: 0; margin-top: 1px; }
+
+.cc__alert--red   { border-left: 2px solid var(--sig-red);   color: #f4a1a1; }
+.cc__alert--amber { border-left: 2px solid var(--sig-amber); color: #f5cc6f; }
+.cc__alert--green { border-left: 2px solid var(--sig-green); color: #86e8b5; }
+
+/* ── Quick actions ──────────────────────── */
+.cc__quick-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+.cc__quick-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  background: transparent;
+  border: none;
+  border-bottom: 1px solid var(--rule);
+  padding: 0.6rem 0.75rem;
+  color: var(--chalk-dim);
+  cursor: pointer;
+  font-size: 0.8rem;
+  font-weight: 500;
+  font-family: var(--font-ui);
+  text-align: left;
+  transition: background var(--transition), color var(--transition);
+  width: 100%;
+}
+
+.cc__quick-btn:last-child { border-bottom: none; }
+
+.cc__quick-btn:hover {
+  background: var(--deck);
+  color: var(--chalk);
+}
+
+.cc__quick-icon { font-size: 0.9rem; }
+.cc__quick-arrow {
+  margin-left: auto;
+  opacity: 0;
+  transition: opacity var(--transition), transform var(--transition);
+  color: var(--copper);
+}
+.cc__quick-btn:hover .cc__quick-arrow { opacity: 1; transform: translateX(2px); }
+
+/* ── Rate rows ──────────────────────────── */
+.cc__rate-rows {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+.cc__rate-row {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.45rem 0;
+  border-bottom: 1px solid var(--rule);
+}
+.cc__rate-row:last-child { border-bottom: none; }
+
+.cc__rate-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.cc__rate-cls {
+  font-size: 0.78rem;
+  color: var(--chalk-dim);
+  flex: 1;
+}
+
+.cc__rate-val {
+  font-family: var(--font-mono);
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--chalk);
+}
+
+.cc__rate-delta {
+  font-family: var(--font-mono);
+  font-size: 0.68rem;
+  width: 44px;
+  text-align: right;
+}
+.cc__rate-delta.up   { color: var(--sig-green); }
+.cc__rate-delta.down { color: var(--sig-red); }
+
+/* ── Charters ───────────────────────────── */
+.cc__charters {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+.cc__charter {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  padding: 0.55rem 0.75rem;
+  border-bottom: 1px solid var(--rule);
+  transition: background var(--transition);
+}
+
+.cc__charter:last-child { border-bottom: none; }
+.cc__charter:hover { background: var(--deck); }
+
+.cc__charter-icon {
+  width: 26px;
+  height: 26px;
+  border-radius: var(--radius-sm);
+  background: var(--sig-blue-dim);
+  color: var(--sig-blue);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.cc__charter-info {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-width: 0;
+}
+
+.cc__charter-name {
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--chalk);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.cc__charter-route {
+  font-size: 0.65rem;
+  color: var(--chalk-faint);
+}
