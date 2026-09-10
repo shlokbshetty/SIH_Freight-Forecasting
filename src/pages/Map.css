@@ -1,8 +1,10 @@
 .map-page {
   display: flex;
   flex-direction: column;
-  height: 100%;
+  height: calc(100vh - 64px);
+  width: 100%;
   overflow: hidden;
+  position: relative;
 }
 
 /* ── Controls ───────────────────────────── */
@@ -11,9 +13,9 @@
   align-items: center;
   justify-content: space-between;
   gap: 0.75rem;
-  padding: 0.5rem 1.25rem;
-  background: var(--hull);
-  border-bottom: 1px solid var(--rule);
+  padding: 0.6rem 1.25rem;
+  background: var(--hull, #0f172a);
+  border-bottom: 1px solid var(--rule, #1e293b);
   flex-shrink: 0;
   flex-wrap: wrap;
 }
@@ -21,7 +23,7 @@
 .map-controls__left {
   display: flex;
   align-items: center;
-  gap: 0.35rem;
+  gap: 0.5rem;
   flex-wrap: wrap;
 }
 
@@ -32,107 +34,55 @@
 }
 
 .map-controls__label {
-  font-size: 0.65rem;
+  font-size: 0.7rem;
   font-weight: 600;
-  color: var(--chalk-faint);
+  color: var(--chalk-faint, #94a3b8);
   margin-right: 0.15rem;
   white-space: nowrap;
   letter-spacing: 0.02em;
 }
 
-/* ── Vessel buttons ─────────────────────── */
-.map-vessel-btn {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: 1px;
-  padding: 0.3rem 0.65rem;
-  background: var(--deck);
-  border: 1px solid var(--rule);
-  border-radius: var(--radius);
-  color: var(--chalk-dim);
-  cursor: pointer;
-  font-family: var(--font-ui);
-  transition: background var(--transition), color var(--transition), border-color var(--transition);
-  font-size: 0.78rem;
-  font-weight: 500;
-}
-
-.map-vessel-btn:hover { background: var(--deck-raised); color: var(--chalk); }
-.map-vessel-btn--active { font-weight: 600; }
-
-.map-vessel-btn__spec {
-  font-size: 0.6rem;
-  color: var(--chalk-faint);
-  font-family: var(--font-mono);
-}
-.map-vessel-btn--active .map-vessel-btn__spec { opacity: 0.7; color: inherit; }
-
 /* ── Legend ─────────────────────────────── */
 .map-legend {
   display: flex;
   align-items: center;
-  gap: 1rem;
-  padding: 0.35rem 1.25rem;
-  background: var(--water);
-  border-bottom: 1px solid var(--rule);
+  gap: 1.25rem;
+  padding: 0.4rem 1.25rem;
+  background: var(--water, #090d16);
+  border-bottom: 1px solid var(--rule, #1e293b);
   flex-shrink: 0;
+  flex-wrap: wrap;
 }
 
 .map-legend__item {
   display: flex;
   align-items: center;
-  gap: 0.35rem;
-  font-size: 0.68rem;
-  color: var(--chalk-dim);
+  gap: 0.4rem;
+  font-size: 0.72rem;
+  color: var(--chalk-dim, #cbd5e1);
 }
 
 .map-legend__dot {
-  width: 8px;
-  height: 8px;
+  width: 9px;
+  height: 9px;
   border-radius: 50%;
   flex-shrink: 0;
 }
 
-.map-legend__square {
-  width: 8px;
-  height: 8px;
-  border-radius: 1px;
-  background: rgba(91,156,246,0.3);
-  border: 1.5px solid var(--sig-blue);
-  flex-shrink: 0;
-}
-
-/* ── Vessel info strip ──────────────────── */
-.map-vessel-info {
-  display: flex;
-  align-items: center;
-  gap: 1.25rem;
-  padding: 0.35rem 1.25rem;
-  background: var(--hull);
-  border-bottom: 1px solid var(--rule);
-  font-size: 0.7rem;
-  color: var(--chalk-dim);
-  flex-shrink: 0;
-  flex-wrap: wrap;
-}
-
-.map-vessel-info__cls { font-weight: 700; font-size: 0.75rem; }
-.map-vessel-info span b { color: var(--chalk); font-weight: 600; font-family: var(--font-mono); }
-.map-vessel-info__desc {
-  color: var(--chalk-faint);
-  font-size: 0.65rem;
-  margin-left: auto;
-  max-width: 360px;
-}
-
 /* ── Map container ──────────────────────── */
-.map-container { flex: 1; min-height: 0; }
+.map-container {
+  flex: 1;
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+  background: #0d1117;
+  position: relative;
+}
 
 /* ── Popup ──────────────────────────────── */
 .map-popup {
   padding: 0.75rem 0.9rem;
-  font-family: var(--font-ui);
+  font-family: var(--font-ui, system-ui, sans-serif);
 }
 
 .map-popup__header {
@@ -141,12 +91,12 @@
   gap: 0.45rem;
   margin-bottom: 0.6rem;
   padding-bottom: 0.5rem;
-  border-bottom: 1px solid var(--rule);
+  border-bottom: 1px solid rgba(255,255,255,0.1);
 }
 
 .map-popup__header strong {
   font-size: 0.85rem;
-  color: var(--chalk);
+  color: #f8fafc;
   flex: 1;
 }
 
@@ -161,10 +111,10 @@
   font-size: 0.6rem;
   font-weight: 600;
   padding: 0.12rem 0.4rem;
-  border-radius: var(--radius-sm);
+  border-radius: 0.25rem;
   border: 1px solid;
   white-space: nowrap;
-  font-family: var(--font-mono);
+  font-family: monospace;
 }
 
 .map-popup__grid {
@@ -181,31 +131,96 @@
 
 .map-popup__item span {
   font-size: 0.58rem;
-  color: var(--chalk-faint);
+  color: #94a3b8;
   letter-spacing: 0.03em;
 }
 
 .map-popup__item b {
   font-size: 0.72rem;
-  color: var(--chalk-dim);
+  color: #e2e8f0;
   font-weight: 500;
-  font-family: var(--font-mono);
+  font-family: monospace;
 }
 
 .map-popup__warn {
   margin-top: 0.5rem;
   font-size: 0.68rem;
-  color: var(--sig-amber);
-  background: var(--sig-amber-dim);
-  border-radius: var(--radius-sm);
+  color: #f59e0b;
+  background: rgba(245,158,11,0.12);
+  border-radius: 0.25rem;
   padding: 0.25rem 0.45rem;
 }
 
-.map-popup__note {
-  margin-top: 0.35rem;
-  font-size: 0.65rem;
-  color: var(--chalk-faint);
-  line-height: 1.4;
+.btn--sm { padding: 0.3rem 0.65rem; font-size: 0.72rem; }
+
+/* ── Map select dropdown ────────────────── */
+.map-select {
+  background: #1e293b;
+  border: 1px solid #334155;
+  border-radius: 0.375rem;
+  color: #f8fafc;
+  font-size: 0.8rem;
+  font-weight: 500;
+  padding: 0.35rem 0.75rem;
+  outline: none;
+  cursor: pointer;
+  max-width: 240px;
 }
 
-.btn--sm { padding: 0.3rem 0.65rem; font-size: 0.72rem; }
+.map-select:focus {
+  border-color: #38bdf8;
+}
+
+/* ── Distance label on sea lane ─────────── */
+.map-dist-label {
+  background: rgba(15,23,42,0.92);
+  border: 1px solid rgba(56,189,248,0.4);
+  border-radius: 0.25rem;
+  color: #38bdf8;
+  font-size: 0.68rem;
+  font-weight: 700;
+  padding: 0.18rem 0.45rem;
+  white-space: nowrap;
+  pointer-events: none;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.4);
+}
+
+/* ── Evaluation result strip on map ─────── */
+.map-eval-strip {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.5rem 1.25rem;
+  font-size: 0.8rem;
+  font-weight: 500;
+  color: #f8fafc;
+  flex-shrink: 0;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.map-eval-strip--green {
+  background: rgba(34,197,94,0.08);
+  border-bottom: 1px solid rgba(34,197,94,0.25);
+}
+
+.map-eval-strip--amber {
+  background: rgba(245,158,11,0.08);
+  border-bottom: 1px solid rgba(245,158,11,0.25);
+}
+
+.map-lighterage-badge {
+  font-size: 0.68rem;
+  font-weight: 700;
+  color: #f97316;
+  background: rgba(249,115,22,0.15);
+  border: 1px solid rgba(249,115,22,0.3);
+  border-radius: 0.25rem;
+  padding: 0.15rem 0.5rem;
+  white-space: nowrap;
+}
+
+.vessel-animated-icon {
+  filter: drop-shadow(0 0 8px rgba(56,189,248,0.75));
+  transition: transform 0.1s linear;
+}
