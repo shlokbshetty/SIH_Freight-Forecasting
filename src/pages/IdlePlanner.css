@@ -1,0 +1,133 @@
+.idle-page { display: flex; flex-direction: column; gap: 0.85rem; }
+
+.idle-head {
+  display: flex; align-items: flex-start; justify-content: space-between;
+  gap: 1rem; flex-wrap: wrap;
+}
+.idle-head h1 { font-size: 1rem; font-weight: 600; }
+.idle-head p  { font-size: 0.75rem; color: var(--chalk-dim); margin-top: 0.15rem; }
+.idle-controls { display: flex; gap: 0.35rem; flex-wrap: wrap; }
+
+.idle-section__head {
+  display: flex; align-items: flex-end; justify-content: space-between;
+  gap: 1rem; flex-wrap: wrap; margin-bottom: 0.7rem;
+}
+.idle-section__head .card-title {
+  margin-bottom: 0; display: flex; align-items: center; gap: 0.35rem;
+}
+
+.idle-inline-controls {
+  display: flex; align-items: center; gap: 0.4rem; flex-wrap: wrap;
+}
+.idle-inline-controls .label { margin-bottom: 0; white-space: nowrap; }
+.idle-inline-controls .select,
+.idle-inline-controls .input {
+  width: auto; min-width: 7rem; padding: 0.3rem 0.5rem; font-size: 0.72rem;
+}
+
+.idle-empty { font-size: 0.74rem; color: var(--chalk-faint); line-height: 1.5; }
+.idle-muted { color: var(--chalk-faint); }
+.idle-strong { color: var(--chalk); font-weight: 600; }
+
+/* ── Turnaround table ───────────────────────────────── */
+.idle-table-scroll { overflow-x: auto; }
+.idle-table { width: 100%; border-collapse: collapse; font-size: 0.76rem; }
+.idle-table th {
+  padding: 0.4rem 0.6rem; text-align: left;
+  font-size: 0.6rem; font-weight: 600; color: var(--chalk-faint);
+  letter-spacing: 0.03em; white-space: nowrap;
+  border-bottom: 1px solid var(--rule-strong);
+}
+.idle-table th.idle-num, .idle-table td.idle-num { text-align: right; }
+.idle-table td {
+  padding: 0.45rem 0.6rem; border-bottom: 1px solid var(--rule);
+  color: var(--chalk-dim); white-space: nowrap;
+}
+.idle-table tbody tr:last-child td { border-bottom: none; }
+.idle-table tbody tr:hover { background: var(--deck); }
+.idle-table__port { color: var(--chalk); font-weight: 500; }
+.idle-row--blocked { opacity: 0.55; }
+
+.idle-badge {
+  display: inline-block;
+  padding: 0.12rem 0.4rem;
+  border-radius: var(--radius-sm);
+  font-size: 0.6rem;
+  font-weight: 600;
+  white-space: nowrap;
+}
+.idle-badge--green { background: var(--sig-green-dim); color: var(--sig-green); }
+.idle-badge--amber { background: var(--sig-amber-dim); color: var(--sig-amber); }
+.idle-badge--red   { background: var(--sig-red-dim);   color: var(--sig-red); }
+
+/* ── Ballast list ───────────────────────────────────── */
+.idle-verdict {
+  font-size: 0.82rem;
+  color: var(--chalk-dim);
+  line-height: 1.55;
+  margin-bottom: 0.75rem;
+}
+.idle-verdict b { color: var(--chalk); font-family: var(--font-mono); font-weight: 600; }
+
+.idle-ballast-list { display: flex; flex-direction: column; gap: 0.3rem; }
+
+.idle-ballast-row {
+  display: grid;
+  grid-template-columns: 1.4rem minmax(9rem, 1.4fr) 1fr 5.5rem 3.5rem 6rem;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.32rem 0.45rem;
+  border-radius: var(--radius);
+  font-size: 0.72rem;
+  color: var(--chalk-dim);
+  border: 1px solid transparent;
+}
+.idle-ballast-row:hover { background: var(--deck); }
+.idle-ballast-row--best { border-color: rgba(61,220,132,0.25); background: var(--sig-green-dim); }
+
+.idle-ballast__rank {
+  font-family: var(--font-mono); font-size: 0.62rem;
+  color: var(--chalk-faint); text-align: right;
+}
+.idle-ballast__name {
+  display: flex; flex-direction: column; gap: 1px; min-width: 0;
+  color: var(--chalk); font-weight: 500;
+}
+.idle-ballast__name em {
+  font-style: normal; font-size: 0.58rem; color: var(--chalk-faint);
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+
+.idle-ballast__track {
+  height: 5px; background: var(--deck); border-radius: 99px; overflow: hidden;
+}
+.idle-ballast__bar {
+  display: block; height: 100%; border-radius: 99px;
+  background: var(--copper); transition: width var(--transition);
+}
+.idle-ballast-row--best .idle-ballast__bar { background: var(--sig-green); }
+
+.idle-ballast__nm, .idle-ballast__days { text-align: right; font-size: 0.68rem; }
+.idle-ballast__cost { text-align: right; color: var(--chalk); font-weight: 600; }
+
+.idle-assumptions {
+  display: flex; gap: 1rem; flex-wrap: wrap;
+  margin-top: 0.75rem; padding-top: 0.6rem;
+  border-top: 1px solid var(--rule);
+}
+.idle-assumptions span {
+  display: inline-flex; align-items: center; gap: 0.3rem;
+  font-size: 0.62rem; color: var(--chalk-faint); font-family: var(--font-mono);
+}
+
+.idle-note {
+  margin-top: 0.7rem; padding-top: 0.55rem; border-top: 1px solid var(--rule);
+  font-size: 0.64rem; color: var(--chalk-faint); line-height: 1.55;
+}
+
+@media (max-width: 860px) {
+  .idle-ballast-row {
+    grid-template-columns: 1.4rem 1fr 5rem 5.5rem;
+  }
+  .idle-ballast__track, .idle-ballast__days { display: none; }
+}

@@ -204,3 +204,57 @@
   font-size: 0.65rem;
   color: var(--chalk-faint);
 }
+
+/* ═══════════════════════════════════════════════════════
+   Live-data additions
+   ═══════════════════════════════════════════════════════ */
+
+.cc__notice { margin-bottom: 1rem; }
+.cc__stats { margin-bottom: 1.25rem; }
+
+.cc__ticker-label--off { color: var(--sig-amber) !important; }
+
+.cc__no-move { color: var(--chalk-faint); font-size: 0.7rem; }
+
+.cc__rate-move { font-size: 0.68rem; margin-left: 0.5rem; }
+.cc__rate-move.up   { color: var(--sig-green); }
+.cc__rate-move.down { color: var(--sig-red); }
+
+.cc__market-note {
+  margin-top: 0.7rem;
+  padding-top: 0.55rem;
+  border-top: 1px solid var(--rule);
+  font-size: 0.63rem;
+  color: var(--chalk-faint);
+  line-height: 1.55;
+}
+
+/* ── Port watchlist ─────────────────────────────────── */
+.cc__watch { display: flex; flex-direction: column; }
+.cc__watch-rows { display: flex; flex-direction: column; gap: 0.15rem; }
+
+.cc__watch-row {
+  display: grid;
+  grid-template-columns: 8px 1fr auto auto;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.4rem 0.35rem;
+  border: none;
+  background: transparent;
+  border-radius: var(--radius);
+  cursor: pointer;
+  font-family: var(--font-ui);
+  font-size: 0.76rem;
+  text-align: left;
+  color: var(--chalk-dim);
+  transition: background var(--transition);
+}
+.cc__watch-row:hover { background: var(--deck); }
+
+.cc__watch-name { color: var(--chalk); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.cc__watch-berths { font-size: 0.62rem; color: var(--chalk-faint); }
+.cc__watch-wait { font-size: 0.74rem; font-weight: 600; min-width: 3rem; text-align: right; }
+.cc__watch-wait--green { color: var(--sig-green); }
+.cc__watch-wait--amber { color: var(--sig-amber); }
+.cc__watch-wait--red   { color: var(--sig-red); }
+.cc__watch-wait--muted { color: var(--chalk-faint); }

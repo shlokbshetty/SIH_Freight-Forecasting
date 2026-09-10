@@ -1,0 +1,14 @@
+{
+  "provider": "manual:port-agent-report",
+  "observed_at": "2026-09-10",
+  "note": "Anchorage counts and berth waiting times entered by hand from port-agent daily reports. MarineTraffic and VesselFinder are NOT scraped: their terms forbid it and they block bots. Replace CongestionAdapter with a licensed AIS or port-agent feed when one is available; the interface does not change.",
+  "ports": {
+    "Paradip":       { "vessels_at_anchor": 6,  "wait_days": 2.9, "berths_available": 3 },
+    "Visakhapatnam": { "vessels_at_anchor": 2,  "wait_days": 1.2, "berths_available": 5 },
+    "Gangavaram":    { "vessels_at_anchor": 2,  "wait_days": 1.1, "berths_available": 2 },
+    "Dhamra":        { "vessels_at_anchor": 2,  "wait_days": 1.4, "berths_available": 2 },
+    "Gopalpur":      { "vessels_at_anchor": 4,  "wait_days": 3.1, "berths_available": 1 },
+    "Haldia":        { "vessels_at_anchor": 9,  "wait_days": 5.2, "berths_available": 2 },
+    "Sandheads":     { "vessels_at_anchor": 11, "wait_days": 5.6, "berths_available": 0 }
+  }
+}

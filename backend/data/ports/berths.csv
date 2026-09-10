@@ -1,0 +1,28 @@
+port,berth_id,berth_name,operator,commodity,loa_max_m,beam_max_m,draft_max_m,tide_required_m,night_restricted,discharge_rate_tpd,mechanised,source_url,source_date
+Paradip,PDP-IOB-1,Iron Ore Berth,Paradip Port Authority,iron_ore,300,47,17.1,1.2,0,45000,1,https://paradipport.gov.in/port-facilities,2026-09-10
+Paradip,PDP-EQ-1,East Quay 1,Paradip Port Authority,thermal_coal|coking_coal,260,43,14.0,1.0,0,30000,1,https://paradipport.gov.in/port-facilities,2026-09-10
+Paradip,PDP-EQ-2,East Quay 2,Paradip Port Authority,thermal_coal,260,43,14.0,1.0,0,30000,1,https://paradipport.gov.in/port-facilities,2026-09-10
+Paradip,PDP-EQ-3,East Quay 3 (Deep Draught Coal),Paradip International Cargo Terminal,thermal_coal|coking_coal,290,45,16.0,1.0,0,38000,1,https://paradipport.gov.in/port-facilities,2026-09-10
+Paradip,PDP-WQ-1,West Quay 1,Paradip Port Authority,thermal_coal,245,40,13.0,1.0,0,22000,1,https://paradipport.gov.in/port-facilities,2026-09-10
+Paradip,PDP-CQ-1,Central Quay 1,Paradip Port Authority,fertiliser|general,230,35,12.0,1.0,1,12000,0,https://paradipport.gov.in/port-facilities,2026-09-10
+Paradip,PDP-CQ-2,Central Quay 2,Paradip Port Authority,limestone|general|bauxite,230,35,12.0,1.0,1,12000,0,https://paradipport.gov.in/port-facilities,2026-09-10
+Visakhapatnam,VZG-OH-OSB1,Outer Harbour Stack Berth 1,Visakhapatnam Port Authority,iron_ore,300,50,18.1,1.1,0,50000,1,https://www.vizagport.com/port-facilities,2026-09-10
+Visakhapatnam,VZG-OH-OSB2,Outer Harbour Stack Berth 2,Visakhapatnam Port Authority,iron_ore|coking_coal,300,50,18.1,1.1,0,50000,1,https://www.vizagport.com/port-facilities,2026-09-10
+Visakhapatnam,VZG-OH-GCB,Outer Harbour General Cargo Berth,Visakhapatnam Port Authority,thermal_coal|coking_coal,290,47,17.0,1.1,0,40000,1,https://www.vizagport.com/port-facilities,2026-09-10
+Visakhapatnam,VZG-IH-EQ1,Inner Harbour East Quay 1,Visakhapatnam Port Authority,thermal_coal,240,38,14.5,1.4,1,20000,1,https://www.vizagport.com/port-facilities,2026-09-10
+Visakhapatnam,VZG-IH-EQ2,Inner Harbour East Quay 2,Visakhapatnam Port Authority,thermal_coal|general,240,38,14.5,1.4,1,18000,0,https://www.vizagport.com/port-facilities,2026-09-10
+Visakhapatnam,VZG-IH-WQ5,Inner Harbour West Quay 5,Visakhapatnam Port Authority,fertiliser|general,210,32,12.5,1.4,1,10000,0,https://www.vizagport.com/port-facilities,2026-09-10
+Visakhapatnam,VZG-IH-WQ7,Inner Harbour West Quay 7,Visakhapatnam Port Authority,limestone|bauxite,210,32,12.5,1.4,1,10000,0,https://www.vizagport.com/port-facilities,2026-09-10
+Gangavaram,GVM-B1,Berth 1,Adani Gangavaram Port,iron_ore,330,55,20.5,0.8,0,55000,1,https://www.adaniports.com/Ports-and-terminals/gangavaram-port,2026-09-10
+Gangavaram,GVM-B2,Berth 2,Adani Gangavaram Port,thermal_coal|coking_coal,330,55,20.0,0.8,0,50000,1,https://www.adaniports.com/Ports-and-terminals/gangavaram-port,2026-09-10
+Gangavaram,GVM-B3,Berth 3,Adani Gangavaram Port,thermal_coal,300,50,18.0,0.8,0,45000,1,https://www.adaniports.com/Ports-and-terminals/gangavaram-port,2026-09-10
+Gangavaram,GVM-B4,Berth 4,Adani Gangavaram Port,bauxite|limestone|general,260,42,15.0,0.8,0,25000,1,https://www.adaniports.com/Ports-and-terminals/gangavaram-port,2026-09-10
+Gangavaram,GVM-B5,Berth 5,Adani Gangavaram Port,fertiliser|general,230,35,13.0,0.8,1,12000,0,https://www.adaniports.com/Ports-and-terminals/gangavaram-port,2026-09-10
+Dhamra,DHM-B1,Berth 1,Adani Dhamra Port,thermal_coal|coking_coal,310,50,18.5,0.9,0,45000,1,https://www.adaniports.com/Ports-and-terminals/dhamra-port,2026-09-10
+Dhamra,DHM-B2,Berth 2,Adani Dhamra Port,iron_ore,310,50,18.5,0.9,0,48000,1,https://www.adaniports.com/Ports-and-terminals/dhamra-port,2026-09-10
+Dhamra,DHM-B3,Berth 3,Adani Dhamra Port,general|limestone,250,40,14.0,0.9,0,20000,1,https://www.adaniports.com/Ports-and-terminals/dhamra-port,2026-09-10
+Gopalpur,GPR-B1,Berth 1,Gopalpur Ports Limited,thermal_coal|limestone,210,32,9.5,1.5,1,15000,0,https://www.adaniports.com/Ports-and-terminals/gopalpur-port,2026-09-10
+Gopalpur,GPR-B2,Berth 2,Gopalpur Ports Limited,iron_ore|general,200,32,8.5,1.5,1,12000,0,https://www.adaniports.com/Ports-and-terminals/gopalpur-port,2026-09-10
+Haldia,HDA-B2,Haldia Dock Berth 2,Syama Prasad Mookerjee Port Kolkata,thermal_coal,240,35,8.0,2.5,1,18000,1,https://www.smportkolkata.shipping.gov.in/haldia-dock-complex,2026-09-10
+Haldia,HDA-B4B,Haldia Dock Berth 4B,Syama Prasad Mookerjee Port Kolkata,thermal_coal|coking_coal,240,35,8.0,2.5,1,20000,1,https://www.smportkolkata.shipping.gov.in/haldia-dock-complex,2026-09-10
+Haldia,HDA-B8,Haldia Dock Berth 8,Syama Prasad Mookerjee Port Kolkata,general|fertiliser,230,33,7.5,2.5,1,10000,0,https://www.smportkolkata.shipping.gov.in/haldia-dock-complex,2026-09-10

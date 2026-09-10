@@ -1,0 +1,30 @@
+# FreightIQ backend.
+#
+# Every dependency here is free and unauthenticated. No API key is required to
+# run the service, and none is read from source: see .env.example for the
+# environment variables the app understands.
+#
+# Tested against CPython 3.11 and 3.12. See the note in README.md about 3.13+.
+
+# ── Web ───────────────────────────────────────────────────────────────────────
+fastapi>=0.115,<1.0
+uvicorn[standard]>=0.30,<1.0
+pydantic>=2.7,<3.0
+
+# ── Data and modelling ────────────────────────────────────────────────────────
+pandas>=2.2,<3.0
+numpy>=1.26,<3.0
+statsmodels>=0.14,<0.15      # SARIMAX with exogenous regressors
+
+# ── Ingestion ─────────────────────────────────────────────────────────────────
+APScheduler>=3.10,<4.0       # hourly refresh_all()
+yfinance>=0.2.40,<1.0        # GOGL, SBLK, coal and iron-ore futures
+fredapi>=0.5.2,<1.0          # DEXINUS, DEXUSAL, PCOALAUUSDM (optional: see below)
+
+# fredapi is optional. Without FRED_API_KEY the adapters fall back to the public
+# fredgraph CSV endpoint, which needs no credential. TradingEconomics is called
+# over stdlib urllib, as is fredgraph, so no HTTP client is listed here;
+# requests arrives transitively with yfinance.
+#
+# Berth data, bunker levels, anchorage counts and corridor definitions are
+# committed CSV and JSON under data/. No dependency, no network.
