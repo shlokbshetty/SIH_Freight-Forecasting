@@ -105,3 +105,23 @@
   padding: 0.25rem 0.6rem;
   border-radius: var(--radius);
 }
+
+/* Theme toggle */
+.app-header__theme-toggle {
+  width: 32px;
+  height: 32px;
+  border-radius: var(--radius);
+  background: var(--deck);
+  border: 1px solid var(--rule-strong);
+  color: var(--chalk-dim);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background var(--transition), color var(--transition), transform 0.2s ease;
+}
+.app-header__theme-toggle:hover {
+  background: var(--deck-raised);
+  color: var(--chalk);
+  transform: rotate(20deg);
+}

@@ -244,3 +244,11 @@
   color: var(--chalk-faint);
   line-height: 1.4;
 }
+
+.matcher-card__select-btn {
+  width: 100%;
+  justify-content: center;
+  margin-top: 0.6rem;
+  font-size: 0.75rem;
+  padding: 0.4rem;
+}
