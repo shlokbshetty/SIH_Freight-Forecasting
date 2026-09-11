@@ -54,6 +54,12 @@
 
 /* =========================================================
    Light mode — [data-theme="light"] on <html>
+
+   Text colours here are set to clear 4.5:1 against #f0f4f8, the page
+   background, which is the lowest-contrast surface any of them sits on. The
+   originals were picked to look right rather than to measure, and --chalk-faint
+   in particular came out at 2.3:1, which carries most of the labels, captions
+   and card titles in the app.
    ========================================================= */
 [data-theme="light"] {
   /* Surfaces — reversed: light sky → white cards */
@@ -65,15 +71,15 @@
   --rule-strong:    rgba(0,0,0,0.14);
 
   /* Copper stays — it's the brand accent */
-  --copper:         #b06a32;
-  --copper-dim:     rgba(176,106,50,0.12);
-  --copper-rule:    rgba(176,106,50,0.3);
+  --copper:         #9d5d2b;   /* was #b06a32, 3.8:1 */
+  --copper-dim:     rgba(157,93,43,0.14);
+  --copper-rule:    rgba(157,93,43,0.35);
 
   /* Signal colours — slightly deeper for contrast on white */
-  --sig-green:      #1a9e5c;
-  --sig-green-dim:  rgba(26,158,92,0.10);
-  --sig-amber:      #c47f00;
-  --sig-amber-dim:  rgba(196,127,0,0.10);
+  --sig-green:      #127a46;   /* was #1a9e5c, 3.1:1 */
+  --sig-green-dim:  rgba(18,122,70,0.12);
+  --sig-amber:      #96620a;   /* was #c47f00, 3.0:1 */
+  --sig-amber-dim:  rgba(150,98,10,0.12);
   --sig-red:        #c0392b;
   --sig-red-dim:    rgba(192,57,43,0.10);
   --sig-blue:       #2563eb;
@@ -82,7 +88,7 @@
   /* Text — dark ink on light paper */
   --chalk:          #111827;
   --chalk-dim:      #4b5563;
-  --chalk-faint:    #9ca3af;
+  --chalk-faint:    #646c7a;   /* was #9ca3af, 2.3:1 — unreadable */
 }
 
 /* Smooth transition when switching theme */

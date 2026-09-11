@@ -1,3 +1,12 @@
+/* =========================================================
+   Evaluate page
+
+   Colours come from the tokens in index.css and carry no fallback on purpose.
+   This file previously referenced --text-primary, --text-muted, --border and
+   friends, none of which exist; each use fell through to a hardcoded dark-theme
+   value, which looked correct in dark mode and rendered near-white text on
+   white cards in light mode. A missing token should break loudly.
+   ========================================================= */
 /* Evaluate Page — Spot vs. CVC Financial Evaluation */
 
 .eval-page {
@@ -20,17 +29,17 @@
 
 .eval-banner--green {
   background: rgba(34, 197, 94, 0.08);
-  border-color: var(--accent-green, #22c55e);
+  border-color: var(--sig-green);
 }
 
 .eval-banner--amber {
   background: rgba(245, 158, 11, 0.08);
-  border-color: var(--accent-amber, #f59e0b);
+  border-color: var(--sig-amber);
 }
 
 .eval-banner--error {
   background: rgba(239, 68, 68, 0.08);
-  border-color: #ef4444;
+  border-color: var(--sig-red);
 }
 
 .eval-banner--idle {
@@ -42,7 +51,7 @@
   font-size: 1rem;
   font-weight: 600;
   line-height: 1.5;
-  color: var(--text-primary, #e6edf3);
+  color: var(--chalk);
   margin: 0;
 }
 
@@ -51,7 +60,7 @@
   width: 16px;
   height: 16px;
   border: 2px solid rgba(255, 255, 255, 0.2);
-  border-top-color: var(--accent-blue, #3b82f6);
+  border-top-color: var(--sig-blue);
   border-radius: 50%;
   animation: spin 0.8s linear infinite;
   flex-shrink: 0;
@@ -91,7 +100,7 @@
 .eval-label {
   font-size: 0.75rem;
   font-weight: 600;
-  color: var(--text-muted, #8b949e);
+  color: var(--chalk-dim);
   text-transform: uppercase;
   letter-spacing: 0.04em;
 }
@@ -99,10 +108,10 @@
 .eval-input,
 .eval-select {
   width: 100%;
-  background: var(--input-bg, rgba(255, 255, 255, 0.05));
-  border: 1px solid var(--border, #30363d);
+  background: var(--deck);
+  border: 1px solid var(--rule-strong);
   border-radius: 0.375rem;
-  color: var(--text-primary, #e6edf3);
+  color: var(--chalk);
   font-size: 0.875rem;
   padding: 0.5rem 0.75rem;
   outline: none;
@@ -111,16 +120,16 @@
 
 .eval-input:focus,
 .eval-select:focus {
-  border-color: var(--accent-blue, #3b82f6);
+  border-color: var(--sig-blue);
 }
 
 .eval-input--error {
-  border-color: #ef4444 !important;
+  border-color: var(--sig-red) !important;
 }
 
 .eval-error {
   font-size: 0.7rem;
-  color: #ef4444;
+  color: var(--sig-red);
 }
 
 /* Vessel buttons */
@@ -134,9 +143,9 @@
 .eval-vessel-btn,
 .eval-horizon-btn {
   background: rgba(255, 255, 255, 0.03);
-  border: 1px solid var(--border, #30363d);
+  border: 1px solid var(--rule-strong);
   border-radius: 0.375rem;
-  color: var(--text-muted, #8b949e);
+  color: var(--chalk-dim);
   font-size: 0.75rem;
   padding: 0.35rem 0.65rem;
   cursor: pointer;
@@ -146,8 +155,8 @@
 .eval-vessel-btn--active,
 .eval-horizon-btn--active {
   background: rgba(59, 130, 246, 0.15);
-  border-color: var(--accent-blue, #3b82f6);
-  color: var(--accent-blue, #3b82f6);
+  border-color: var(--sig-blue);
+  color: var(--sig-blue);
 }
 
 .eval-horizon-btn {
@@ -173,7 +182,7 @@
 .eval-slider-val {
   font-size: 0.9rem;
   font-weight: 700;
-  color: var(--accent-blue, #3b82f6);
+  color: var(--sig-blue);
 }
 
 .eval-slider {
@@ -181,7 +190,7 @@
   width: 100%;
   height: 4px;
   border-radius: 2px;
-  background: var(--border, #30363d);
+  background: var(--rule-strong);
   outline: none;
   cursor: pointer;
 }
@@ -191,7 +200,7 @@
   width: 16px;
   height: 16px;
   border-radius: 50%;
-  background: var(--accent-blue, #3b82f6);
+  background: var(--sig-blue);
   box-shadow: 0 0 6px rgba(59, 130, 246, 0.5);
   cursor: pointer;
 }
@@ -200,7 +209,7 @@
   display: flex;
   justify-content: space-between;
   font-size: 0.68rem;
-  color: var(--text-muted, #8b949e);
+  color: var(--chalk-dim);
 }
 
 /* ── Right column ─────────────────────────────────────────────────────── */
@@ -225,12 +234,12 @@
 }
 
 .eval-kv span {
-  color: var(--text-muted, #8b949e);
+  color: var(--chalk-dim);
 }
 
 .eval-kv b {
   font-weight: 600;
-  color: var(--text-primary, #e6edf3);
+  color: var(--chalk);
 }
 
 .eval-kv--sub {
@@ -241,13 +250,13 @@
 
 .eval-divider {
   height: 1px;
-  background: var(--border, #30363d);
+  background: var(--rule-strong);
   margin: 0.35rem 0;
 }
 
 .eval-lighterage-warn {
   font-size: 0.78rem;
-  color: #fb923c;
+  color: var(--sig-amber);
   background: rgba(251, 146, 60, 0.08);
   border: 1px solid rgba(251, 146, 60, 0.2);
   border-radius: 0.375rem;
@@ -255,7 +264,7 @@
 }
 
 .eval-placeholder {
-  color: var(--text-muted, #8b949e);
+  color: var(--chalk-dim);
   font-size: 0.85rem;
   text-align: center;
   padding: 1.5rem 0;
@@ -268,15 +277,15 @@
 
 /* ── Tooltip ──────────────────────────────────────────────────────────── */
 .eval-tooltip {
-  background: var(--panel, #161b22);
-  border: 1px solid var(--border, #30363d);
+  background: var(--hull);
+  border: 1px solid var(--rule-strong);
   border-radius: 0.375rem;
   padding: 0.6rem 0.85rem;
   font-size: 0.8rem;
 }
 
 .eval-tooltip__label {
-  color: var(--text-muted, #8b949e);
+  color: var(--chalk-dim);
   font-size: 0.72rem;
   margin: 0 0 0.35rem;
 }
@@ -289,7 +298,7 @@
 }
 
 .eval-tooltip__row b {
-  color: var(--text-primary, #e6edf3);
+  color: var(--chalk);
   font-weight: 600;
 }
 
@@ -310,10 +319,10 @@
 
 .eval-table th {
   text-align: left;
-  color: var(--text-muted, #8b949e);
+  color: var(--chalk-dim);
   font-weight: 600;
   padding: 0.5rem 0.75rem;
-  border-bottom: 1px solid var(--border, #30363d);
+  border-bottom: 1px solid var(--rule-strong);
   font-size: 0.72rem;
   text-transform: uppercase;
   letter-spacing: 0.04em;
@@ -321,7 +330,7 @@
 
 .eval-table td {
   padding: 0.5rem 0.75rem;
-  color: var(--text-primary, #e6edf3);
+  color: var(--chalk);
   border-bottom: 1px solid rgba(255, 255, 255, 0.04);
 }
 
