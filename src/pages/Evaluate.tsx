@@ -291,7 +291,7 @@ export default function Evaluate() {
               <div className="eval-summary-grid">
                 <div className="eval-kv">
                   <span>CVC/Spot Savings</span>
-                  <b style={{ color: result.is_cvc_favorable ? 'var(--accent-green)' : 'var(--accent-amber)' }}>
+                  <b style={{ color: result.is_cvc_favorable ? 'var(--sig-green)' : 'var(--sig-amber)' }}>
                     {result.is_cvc_favorable ? '+' : '-'}₹{result.base_case_delta_cr.toFixed(1)} Cr
                   </b>
                 </div>
@@ -361,12 +361,12 @@ export default function Evaluate() {
                     <XAxis
                       dataKey="voyage"
                       tickFormatter={v => `V${v}`}
-                      tick={{ fill: '#4a5568', fontSize: 11 }}
+                      tick={{ fill: 'var(--chalk-faint)', fontSize: 11 }}
                       tickLine={false}
                       axisLine={{ stroke: 'rgba(255,255,255,0.06)' }}
                     />
                     <YAxis
-                      tick={{ fill: '#4a5568', fontSize: 11 }}
+                      tick={{ fill: 'var(--chalk-faint)', fontSize: 11 }}
                       tickLine={false}
                       axisLine={false}
                       tickFormatter={v => `$${v}`}
@@ -379,6 +379,7 @@ export default function Evaluate() {
                     <Area
                       type="monotone"
                       dataKey="bandHigh"
+                      isAnimationActive={false}
                       stroke="none"
                       fill="url(#bandGrad)"
                       fillOpacity={1}
@@ -389,8 +390,11 @@ export default function Evaluate() {
                     <Area
                       type="monotone"
                       dataKey="bandLow"
+                      isAnimationActive={false}
                       stroke="none"
-                      fill="#0D1117"
+                      // Masks the band below p10. Must follow the surface, or it
+                      // paints a near-black block across the chart in light mode.
+                      fill="var(--hull)"
                       fillOpacity={1}
                       legendType="none"
                       dot={false}
@@ -401,6 +405,7 @@ export default function Evaluate() {
                     <Line
                       type="monotone"
                       dataKey="p90"
+                      isAnimationActive={false}
                       stroke="#f87171"
                       strokeWidth={1.5}
                       strokeDasharray="4 3"
@@ -411,6 +416,7 @@ export default function Evaluate() {
                     <Line
                       type="monotone"
                       dataKey="p50"
+                      isAnimationActive={false}
                       stroke="#3b82f6"
                       strokeWidth={2.5}
                       dot={{ r: 4, fill: '#3b82f6', strokeWidth: 0 }}
@@ -420,6 +426,7 @@ export default function Evaluate() {
                     <Line
                       type="monotone"
                       dataKey="p10"
+                      isAnimationActive={false}
                       stroke="#4ade80"
                       strokeWidth={1.5}
                       strokeDasharray="4 3"
@@ -428,8 +435,8 @@ export default function Evaluate() {
                     />
 
                     <Legend
-                      wrapperStyle={{ fontSize: 11, color: '#64748b', paddingTop: 6 }}
-                      formatter={v => <span style={{ color: '#64748b' }}>{v}</span>}
+                      wrapperStyle={{ fontSize: 11, color: 'var(--chalk-dim)', paddingTop: 6 }}
+                      formatter={v => <span style={{ color: 'var(--chalk-dim)' }}>{v}</span>}
                     />
                   </ComposedChart>
                 </ResponsiveContainer>
@@ -470,7 +477,7 @@ export default function Evaluate() {
                     <td className="mono">${(v.cvc_voyage_total / 1000).toFixed(0)}K</td>
                     <td
                       className="mono"
-                      style={{ color: v.voyage_savings >= 0 ? 'var(--accent-green)' : 'var(--accent-red)' }}
+                      style={{ color: v.voyage_savings >= 0 ? 'var(--sig-green)' : 'var(--sig-red)' }}
                     >
                       {v.voyage_savings >= 0 ? '+' : ''}${(v.voyage_savings / 1000).toFixed(0)}K
                     </td>

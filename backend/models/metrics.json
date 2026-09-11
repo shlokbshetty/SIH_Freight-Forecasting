@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-09-10T17:26:32+00:00",
+  "generated_at": "2026-09-11T02:06:34+00:00",
   "horizons_days": [
     30,
     90,
@@ -10,18 +10,18 @@
     "handysize": {
       "horizons": {
         "30": {
-          "mape": 4.567,
-          "rmse": 1.0885,
+          "mape": 4.243,
+          "rmse": 1.1517,
           "folds": 4
         },
         "90": {
-          "mape": 4.98,
-          "rmse": 1.2042,
+          "mape": 5.558,
+          "rmse": 1.6711,
           "folds": 4
         },
         "180": {
-          "mape": 6.059,
-          "rmse": 1.4065,
+          "mape": 7.322,
+          "rmse": 2.2588,
           "folds": 4
         }
       },
@@ -41,28 +41,28 @@
         "month_sin",
         "month_cos"
       ],
-      "aic": -7338.741,
+      "aic": -5319.244,
       "train_rows": 1095,
       "train_end": "2026-09-10",
-      "trained_at": "2026-09-10T17:26:23+00:00",
+      "trained_at": "2026-09-11T02:06:22+00:00",
       "converged": true,
       "model_file": "sarimax_handysize.pkl"
     },
     "supramax": {
       "horizons": {
         "30": {
-          "mape": 5.856,
-          "rmse": 1.101,
+          "mape": 5.303,
+          "rmse": 1.1593,
           "folds": 4
         },
         "90": {
-          "mape": 6.374,
-          "rmse": 1.216,
+          "mape": 6.906,
+          "rmse": 1.6449,
           "folds": 4
         },
         "180": {
-          "mape": 7.796,
-          "rmse": 1.4286,
+          "mape": 9.165,
+          "rmse": 2.2594,
           "folds": 4
         }
       },
@@ -82,28 +82,28 @@
         "month_sin",
         "month_cos"
       ],
-      "aic": -6812.045,
+      "aic": -4792.543,
       "train_rows": 1095,
       "train_end": "2026-09-10",
-      "trained_at": "2026-09-10T17:26:26+00:00",
+      "trained_at": "2026-09-11T02:06:26+00:00",
       "converged": true,
       "model_file": "sarimax_supramax.pkl"
     },
     "panamax": {
       "horizons": {
         "30": {
-          "mape": 5.112,
-          "rmse": 0.914,
+          "mape": 17.881,
+          "rmse": 2.7299,
           "folds": 4
         },
         "90": {
-          "mape": 10.485,
-          "rmse": 1.6163,
+          "mape": 46.001,
+          "rmse": 6.3382,
           "folds": 4
         },
         "180": {
-          "mape": 9.111,
-          "rmse": 1.7503,
+          "mape": 45.16,
+          "rmse": 7.6774,
           "folds": 4
         }
       },
@@ -123,28 +123,28 @@
         "month_sin",
         "month_cos"
       ],
-      "aic": -6095.519,
+      "aic": -3166.695,
       "train_rows": 1095,
       "train_end": "2026-09-10",
-      "trained_at": "2026-09-10T17:26:27+00:00",
+      "trained_at": "2026-09-11T02:06:30+00:00",
       "converged": true,
       "model_file": "sarimax_panamax.pkl"
     },
     "capesize": {
       "horizons": {
         "30": {
-          "mape": 6.42,
-          "rmse": 0.8431,
+          "mape": 12.999,
+          "rmse": 1.6105,
           "folds": 4
         },
         "90": {
-          "mape": 3.958,
-          "rmse": 0.5472,
+          "mape": 24.403,
+          "rmse": 2.8234,
           "folds": 4
         },
         "180": {
-          "mape": 4.03,
-          "rmse": 0.6208,
+          "mape": 33.051,
+          "rmse": 4.0297,
           "folds": 4
         }
       },
@@ -164,10 +164,10 @@
         "month_sin",
         "month_cos"
       ],
-      "aic": -6019.625,
+      "aic": -4632.155,
       "train_rows": 1095,
       "train_end": "2026-09-10",
-      "trained_at": "2026-09-10T17:26:31+00:00",
+      "trained_at": "2026-09-11T02:06:33+00:00",
       "converged": true,
       "model_file": "sarimax_capesize.pkl"
     }
