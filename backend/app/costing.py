@@ -446,11 +446,38 @@ def evaluate(
                 f"{TC_COMMISSION:.2%} commission on hire."
             ),
         },
+        # Per-voyage components, not just totals. Callers that render a cost
+        # breakdown need the parts, and deriving them a second time at the
+        # router would be a second place for the arithmetic to drift.
         "voyages": [
             {
                 "index": i + 1,
+                "voyage_number": i + 1,
                 "departure_day": int(round(i * profile.round_trip_days)),
                 "rate_usd_per_t": round(rate, 3),
+                "spot_freight_rate": round(rate, 3),
+                "spot_freight_cost": round(rate * cargo_tonnes, 2),
+                "cvc_freight_rate": round(locked_rate, 3),
+                "cvc_freight_cost": round(locked_rate * cargo_tonnes, 2),
+                "bunker_adj_cost": round(bunker_spot, 2),
+                "cvc_bunker_adj_cost": round(bunker_cvc, 2),
+                "port_charges": round(port_charges, 2),
+                "wait_days": round(profile.wait_days_spot, 2),
+                "cvc_wait_days": round(profile.wait_days_cvc, 2),
+                "demurrage_cost": round(demurrage_spot, 2),
+                "cvc_demurrage_cost": round(demurrage_cvc, 2),
+                "lighterage_tonnage": round(call.lighterage_tonnes, 1),
+                "lighterage_cost": round(call.lighterage_cost_usd, 2),
+                "spot_voyage_total": round(
+                    rate * cargo_tonnes + bunker_spot + port_charges
+                    + demurrage_spot + call.lighterage_cost_usd, 2),
+                "cvc_voyage_total": round(
+                    locked_rate * cargo_tonnes + bunker_cvc + port_charges
+                    + demurrage_cvc + call.lighterage_cost_usd, 2),
+                "voyage_savings": round(
+                    (rate - locked_rate) * cargo_tonnes
+                    + (bunker_spot - bunker_cvc)
+                    + (demurrage_spot - demurrage_cvc), 2),
                 "spot_cr": round(usd_to_crore(rate * cargo_tonnes + bunker_spot + port_charges + demurrage_spot + call.lighterage_cost_usd), 3),
                 "cvc_cr": round(usd_to_crore(locked_rate * cargo_tonnes + bunker_cvc + port_charges + demurrage_cvc + call.lighterage_cost_usd), 3),
             }
