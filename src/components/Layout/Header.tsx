@@ -8,12 +8,14 @@ import './Header.css';
 const ROUTE_META: Record<string, { title: string; sub: string }> = {
   '/':          { title: 'Command Center',    sub: 'Operational overview & live market alerts' },
   '/map':       { title: 'Route Map',          sub: 'Interactive GIS port & vessel tracking' },
+  '/evaluate':  { title: 'Evaluate (CVC)',     sub: 'Spot vs CVC with quantile rate bands' },
   '/forecast':  { title: 'Freight Forecast',   sub: 'Rate prediction with confidence bands' },
   '/matcher':   { title: 'Vessel Matcher',     sub: 'Cargo & port compatibility engine' },
   '/contracts': { title: 'Contract Simulator', sub: 'Spot vs CVC cost comparison' },
   '/timing':    { title: 'Market Entry Timing', sub: 'When to fix, and what waiting costs' },
   '/idle':      { title: 'Idle & Repositioning', sub: 'Ballast legs, turnaround and redeployment' },
   '/risk':      { title: 'Risk & Data Health',  sub: 'Disruptions, port delays and source freshness' },
+  '/voyage-editor': { title: 'Voyage Editor',   sub: 'Edit a matched voyage and lock the charter' },
 };
 
 export default function Header() {
