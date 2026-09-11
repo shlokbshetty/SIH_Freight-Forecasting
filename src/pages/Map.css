@@ -224,3 +224,57 @@
   filter: drop-shadow(0 0 8px rgba(56,189,248,0.75));
   transition: transform 0.1s linear;
 }
+
+/* ═══════════════════════════════════════════════════════
+   Berth status colour code
+   ═══════════════════════════════════════════════════════ */
+
+.map-vessel-codes { display: inline-flex; gap: 0.25rem; }
+
+.map-vessel-code {
+  background: transparent;
+  border: 1px solid var(--rule-strong);
+  border-radius: var(--radius);
+  color: var(--chalk-dim);
+  font-family: var(--font-ui);
+  font-size: 0.7rem;
+  font-weight: 500;
+  padding: 0.28rem 0.5rem;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background var(--transition), color var(--transition), border-color var(--transition);
+}
+.map-vessel-code:hover { background: var(--deck); color: var(--chalk); }
+.map-vessel-code--active {
+  background: var(--copper-dim);
+  border-color: var(--copper-rule);
+  color: var(--copper);
+}
+
+.map-legend__title {
+  font-size: 0.65rem;
+  font-weight: 600;
+  color: var(--chalk-faint);
+  margin-right: 0.35rem;
+  white-space: nowrap;
+}
+
+.map-legend__item b { color: var(--chalk); margin-left: 0.2rem; }
+
+.map-legend__square {
+  display: inline-block;
+  width: 12px;
+  height: 12px;
+  border-radius: 2px;
+  border: 2px solid;
+  margin-right: 6px;
+  flex-shrink: 0;
+}
+
+/* Why the port is coloured as it is, in its own popup. */
+.map-popup__reason {
+  font-size: 0.68rem;
+  color: var(--chalk-dim);
+  line-height: 1.45;
+  padding: 0 0.75rem 0.5rem;
+}

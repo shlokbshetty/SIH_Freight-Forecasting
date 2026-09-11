@@ -80,6 +80,7 @@ def ports_catalog() -> list[dict]:
         deepest = max((b.draft_max_m for b in berths), default=port.current_draft_m)
         out.append({
             "code": PORT_TO_CODE.get(port.id, port.id.upper()),
+            "port_id": port.id,
             "name": port.name,
             "country": "India",
             "is_indian_hub": True,
@@ -97,6 +98,7 @@ def ports_catalog() -> list[dict]:
         terms = costing.LOAD_PORT_TERMS.get(load.id, costing.DEFAULT_LOAD_TERMS)
         out.append({
             "code": PORT_TO_CODE.get(load.id, load.id.upper().replace("-", "_")),
+            "port_id": load.id,
             "name": load.name,
             "country": load.country,
             "is_indian_hub": False,

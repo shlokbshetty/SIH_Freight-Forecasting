@@ -16,6 +16,8 @@ import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import { fetchPorts, evaluate, horizonToVoyages } from '../lib/evaluateApi';
 import type { PortResponse, EvaluationResult } from '../lib/evaluateApi';
+import { apiPost } from '../lib/api';
+import type { BerthOutcome, MatchResponse } from '../lib/apiTypes';
 import './Map.css';
 
 // ─── Maritime Shipping Waypoints & Regions ────────────────────────────────────
@@ -37,6 +39,32 @@ const WP_MOZAMBIQUE_CH: [number, number]      = [-20.0, 42.0];   // Mozambique C
 const WP_BAY_OF_BENGAL_SOUTH: [number, number]= [10.0, 83.5];    // South Bay of Bengal
 const WP_BAY_OF_BENGAL_NORTH: [number, number]= [19.0, 87.0];    // North Bay of Bengal
 const SAGAR_LL: [number, number]               = [21.2500, 88.1500];
+
+// ─── Berth status colour code ─────────────────────────────────────────────────
+//
+// Discharge ports are coloured by what the selected vessel can actually do
+// there, which is the question the map exists to answer. The three outcomes are
+// commercially distinct and are kept distinct: berthing on arrival and berthing
+// only on a high-water window are different fixtures at different prices.
+//
+// Loading ports used to be red, which collided with "cannot berth". They are
+// now carried by shape instead: a neutral square, no status colour. Status
+// colours mean status and nothing else.
+const BERTH_STATUS: Record<BerthOutcome, { colour: string; label: string; short: string }> = {
+  ACCEPT_ALL_TIDE:       { colour: '#3ddc84', label: 'Berths on arrival',   short: 'all tide' },
+  ACCEPT_HIGH_TIDE_ONLY: { colour: '#f0a500', label: 'High water only',     short: 'on tide' },
+  REJECT:                { colour: '#e05c5c', label: 'Cannot berth',        short: 'blocked' },
+};
+
+const LOAD_PORT_COLOUR = '#5a93e8';
+const UNKNOWN_COLOUR   = '#4a5568';
+
+const VESSEL_CODES = ['HANDYSIZE', 'SUPRAMAX', 'PANAMAX', 'CAPESIZE'] as const;
+
+/** Typical full parcel per class, used to judge feasibility on the map. */
+const TYPICAL_PARCEL: Record<string, number> = {
+  HANDYSIZE: 35_000, SUPRAMAX: 55_000, PANAMAX: 72_000, CAPESIZE: 160_000,
+};
 
 // Offshore waypoints for Indian Ports to keep coastal sea lanes in ocean water
 const PORT_OFFSHORE: Record<string, [number, number]> = {
@@ -324,13 +352,31 @@ function calculateBearing(p1: [number, number], p2: [number, number]): number {
 
 // ─── Icon Factories ──────────────────────────────────────────────────────────
 
-function makeHubIcon(size = 16) {
-  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${size+8}" height="${size+8}" viewBox="0 0 ${size+8} ${size+8}">
-    <circle cx="${(size+8)/2}" cy="${(size+8)/2}" r="${size/2+2}" fill="#3b82f633"/>
-    <circle cx="${(size+8)/2}" cy="${(size+8)/2}" r="${size/2}" fill="#3b82f6" stroke="#0d1117" stroke-width="2"/>
-  </svg>`;
-  return L.divIcon({ className: '', html: svg, iconSize: [size+8, size+8], iconAnchor: [(size+8)/2, (size+8)/2], popupAnchor: [0, -(size/2+4)] });
+function makeStatusIcon(colour: string, size = 16) {
+  const svg = `
+    <svg xmlns="http://www.w3.org/2000/svg" width="${size+8}" height="${size+8}" viewBox="0 0 ${size+8} ${size+8}">
+      <circle cx="${(size+8)/2}" cy="${(size+8)/2}" r="${size/2+2}" fill="${colour}33"/>
+      <circle cx="${(size+8)/2}" cy="${(size+8)/2}" r="${size/2}" fill="${colour}" stroke="#0d1117" stroke-width="2"/>
+    </svg>`;
+  return L.divIcon({
+    className: '', html: svg,
+    iconSize: [size+8, size+8], iconAnchor: [(size+8)/2, (size+8)/2], popupAnchor: [0, -(size/2+4)],
+  });
 }
+
+/** Loading ports carry identity by shape, so the traffic-light hues stay free. */
+function makeLoadPortIcon(size = 13) {
+  const svg = `
+    <svg xmlns="http://www.w3.org/2000/svg" width="${size+6}" height="${size+6}" viewBox="0 0 ${size+6} ${size+6}">
+      <rect x="3" y="3" width="${size}" height="${size}" rx="2"
+            fill="${LOAD_PORT_COLOUR}44" stroke="${LOAD_PORT_COLOUR}" stroke-width="1.8"/>
+    </svg>`;
+  return L.divIcon({
+    className: '', html: svg,
+    iconSize: [size+6, size+6], iconAnchor: [(size+6)/2, (size+6)/2], popupAnchor: [0, -(size/2+4)],
+  });
+}
+
 
 function makeAnchorageIcon(size = 16) {
   const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${size+12}" height="${size+12}" viewBox="0 0 ${size+12} ${size+12}">
@@ -340,13 +386,6 @@ function makeAnchorageIcon(size = 16) {
   return L.divIcon({ className: '', html: svg, iconSize: [size+12, size+12], iconAnchor: [(size+12)/2, (size+12)/2], popupAnchor: [0, -(size/2+6)] });
 }
 
-function makeGlobalIcon(size = 14) {
-  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${size+8}" height="${size+8}" viewBox="0 0 ${size+8} ${size+8}">
-    <circle cx="${(size+8)/2}" cy="${(size+8)/2}" r="${size/2+2}" fill="#ef444433"/>
-    <circle cx="${(size+8)/2}" cy="${(size+8)/2}" r="${size/2}" fill="#ef4444" stroke="#0d1117" stroke-width="2"/>
-  </svg>`;
-  return L.divIcon({ className: '', html: svg, iconSize: [size+8, size+8], iconAnchor: [(size+8)/2, (size+8)/2], popupAnchor: [0, -(size/2+4)] });
-}
 
 function makeLighterageIcon() {
   const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 28 28">
@@ -411,7 +450,9 @@ export default function MapPage() {
   const [loading, setLoading]         = useState(true);
   const [originCode, setOriginCode]   = useState<string>('NEWCASTLE');
   const [destCode, setDestCode]       = useState<string>('HALDIA');
-  const [vesselCode]                  = useState<string>('PANAMAX');
+  const [vesselCode, setVesselCode]   = useState<string>('PANAMAX');
+  // Berth outcome per discharge port for the selected class, from the resolver.
+  const [berthStatus, setBerthStatus] = useState<Record<string, MatchResponse['recommendations'][number]>>({});
   const [evalResult, setEvalResult]   = useState<EvaluationResult | null>(null);
 
   // Fetch ports
@@ -454,6 +495,37 @@ export default function MapPage() {
     };
   }, []);
 
+  // Ask the berth resolver what this class can do at each Indian port. One call
+  // per port, in parallel. Doing the draft arithmetic here instead would be a
+  // second implementation of a rule that already exists server-side.
+  useEffect(() => {
+    const hubs = ports.filter(p => p.is_indian_hub && !p.is_anchorage);
+    if (hubs.length === 0) return;
+
+    let cancelled = false;
+    const tonnes = TYPICAL_PARCEL[vesselCode] ?? 55_000;
+
+    Promise.all(hubs.map(port =>
+      apiPost<MatchResponse>('/api/match', {
+        discharge_port_id: port.port_id,
+        commodity: 'thermal_coal',
+        cargo_tonnes: tonnes,
+      })
+        .then(res => {
+          const verdict = res.recommendations.find(
+            r => r.vessel_class.toUpperCase() === vesselCode,
+          );
+          return verdict ? [port.code, verdict] as const : null;
+        })
+        .catch(() => null),
+    )).then(entries => {
+      if (cancelled) return;
+      setBerthStatus(Object.fromEntries(entries.filter(Boolean) as [string, MatchResponse['recommendations'][number]][]));
+    });
+
+    return () => { cancelled = true; };
+  }, [ports, vesselCode]);
+
   // Render Port Markers
   useEffect(() => {
     const map = mapRef.current;
@@ -463,17 +535,27 @@ export default function MapPage() {
     portMarkersRef.current.clear();
 
     ports.forEach(port => {
+      const verdict = berthStatus[port.code];
+      const status = verdict ? BERTH_STATUS[verdict.outcome] : null;
+
       let icon: L.DivIcon;
+      let color: string;
+      let roleLabel: string;
+
       if (port.is_anchorage) {
         icon = makeAnchorageIcon();
+        color = LOAD_PORT_COLOUR;
+        roleLabel = 'Anchorage';
       } else if (port.is_indian_hub) {
-        icon = makeHubIcon();
+        // Coloured by what this class can do here, grey until the resolver answers.
+        color = status ? status.colour : UNKNOWN_COLOUR;
+        icon = makeStatusIcon(color);
+        roleLabel = status ? status.label : 'Checking berths';
       } else {
-        icon = makeGlobalIcon();
+        icon = makeLoadPortIcon();
+        color = LOAD_PORT_COLOUR;
+        roleLabel = 'Loading Port';
       }
-
-      const roleLabel = port.is_anchorage ? 'Anchorage' : port.is_indian_hub ? 'Indian Hub' : 'Loading Port';
-      const color = port.is_indian_hub ? '#3b82f6' : '#ef4444';
 
       const marker = L.marker([port.latitude, port.longitude], { icon });
       marker.bindPopup(`
@@ -488,7 +570,12 @@ export default function MapPage() {
             <div class="map-popup__item"><span>Country</span><b>${port.country}</b></div>
             <div class="map-popup__item"><span>Max Draft</span><b>${port.max_draft}m</b></div>
             <div class="map-popup__item"><span>Max LOA</span><b>${port.max_loa > 999 ? '∞' : port.max_loa + 'm'}</b></div>
+            ${verdict ? `
+            <div class="map-popup__item"><span>Berth</span><b>${verdict.berth?.berth_id ?? '—'}</b></div>
+            <div class="map-popup__item"><span>Turnaround</span><b>${verdict.turnaround_days?.toFixed(1) ?? '—'} d</b></div>` : ''}
           </div>
+          ${verdict ? `<div class="map-popup__reason">${verdict.reason}</div>` : ''}
+          ${verdict?.lighterage ? `<div class="map-popup__warn">${verdict.lighterage.narrative}</div>` : ''}
           ${port.is_anchorage ? '<div class="map-popup__warn">⚓ Lighterage / Transshipment Anchorage</div>' : ''}
         </div>`, { maxWidth: 280 });
 
@@ -503,7 +590,7 @@ export default function MapPage() {
       marker.addTo(map);
       portMarkersRef.current.set(port.code, marker);
     });
-  }, [ports]);
+  }, [ports, berthStatus]);
 
   // Draw Sea Lane + Animated Vector Vessel
   const drawSeaLane = useCallback(async () => {
@@ -700,6 +787,19 @@ export default function MapPage() {
               <option key={p.code} value={p.code}>{p.name} ({p.country})</option>
             ))}
           </select>
+          <span className="map-controls__label" style={{ marginLeft: '0.75rem' }}>Vessel</span>
+          <div className="map-vessel-codes">
+            {VESSEL_CODES.map(code => (
+              <button
+                key={code}
+                className={`map-vessel-code ${vesselCode === code ? 'map-vessel-code--active' : ''}`}
+                onClick={() => setVesselCode(code)}
+                title={`Colour the discharge ports by what a ${code[0] + code.slice(1).toLowerCase()} can do at a ${TYPICAL_PARCEL[code].toLocaleString('en-US')} T parcel`}
+              >
+                {code[0] + code.slice(1).toLowerCase()}
+              </button>
+            ))}
+          </div>
         </div>
         <div className="map-controls__right">
           <button className="btn btn-ghost btn--sm" onClick={resetMap}>
@@ -710,29 +810,34 @@ export default function MapPage() {
 
       {/* Legend */}
       <div className="map-legend">
+        <span className="map-legend__title">
+          Can a {vesselCode[0] + vesselCode.slice(1).toLowerCase()} berth here?
+        </span>
+        {(Object.keys(BERTH_STATUS) as BerthOutcome[]).map(outcome => {
+          const n = Object.values(berthStatus).filter(v => v.outcome === outcome).length;
+          const s = BERTH_STATUS[outcome];
+          return (
+            <div key={outcome} className="map-legend__item">
+              <span className="map-legend__dot" style={{ background: s.colour, boxShadow: `0 0 5px ${s.colour}` }} />
+              <span>{s.label} <b className="mono">{n}</b></span>
+            </div>
+          );
+        })}
         <div className="map-legend__item">
-          <span className="map-legend__dot" style={{ background: '#3b82f6', boxShadow: '0 0 5px #3b82f6' }} />
-          <span>Indian Hub Port</span>
+          <span className="map-legend__square" style={{ borderColor: LOAD_PORT_COLOUR, background: `${LOAD_PORT_COLOUR}44` }} />
+          <span>Loading port</span>
         </div>
         <div className="map-legend__item">
-          <span className="map-legend__dot" style={{ background: '#ef4444', boxShadow: '0 0 5px #ef4444' }} />
-          <span>Global Loading Port</span>
+          <span style={{ display: 'inline-block', width: 14, height: 14, borderRadius: '50%', border: `2px dashed ${LOAD_PORT_COLOUR}`, marginRight: 6 }} />
+          <span>Anchorage</span>
         </div>
         <div className="map-legend__item">
-          <span style={{ display: 'inline-block', width: 16, height: 16, borderRadius: '50%', border: '2px dashed #3b82f6', marginRight: 6 }} />
-          <span>Anchorage (Sagar/Sandheads)</span>
+          <span style={{ display: 'inline-block', width: 18, height: 3, background: '#38bdf8', marginRight: 6, borderRadius: 2 }} />
+          <span>Sea lane</span>
         </div>
         <div className="map-legend__item">
-          <span style={{ display: 'inline-block', width: 20, height: 3, background: '#38bdf8', marginRight: 6, borderRadius: 2 }} />
-          <span>Smooth Spline Sea Lane</span>
-        </div>
-        <div className="map-legend__item">
-          <span style={{ display: 'inline-block', width: 20, height: 3, background: '#f97316', marginRight: 6, borderRadius: 2, borderTop: '2px dashed #f97316' }} />
-          <span>Lighterage Route</span>
-        </div>
-        <div className="map-legend__item" style={{ marginLeft: 'auto' }}>
-          <span style={{ display: 'inline-block', width: 10, height: 10, borderRadius: '50%', background: '#38bdf8', boxShadow: '0 0 8px #38bdf8', marginRight: 6 }} />
-          <span style={{ color: '#38bdf8', fontWeight: 600 }}>Vector Vessel (360° Rotated)</span>
+          <span style={{ display: 'inline-block', width: 18, height: 3, background: '#f97316', marginRight: 6, borderRadius: 2 }} />
+          <span>Lighterage leg</span>
         </div>
       </div>
 

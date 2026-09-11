@@ -79,6 +79,8 @@ export interface EvaluationResult {
 
 export interface PortResponse {
   code: string;
+  /** This service's own port id, for endpoints that key on it. */
+  port_id: string;
   name: string;
   country: string;
   is_indian_hub: boolean;
