@@ -361,12 +361,12 @@ export default function Evaluate() {
                     <XAxis
                       dataKey="voyage"
                       tickFormatter={v => `V${v}`}
-                      tick={{ fill: '#4a5568', fontSize: 11 }}
+                      tick={{ fill: 'var(--chalk-faint)', fontSize: 11 }}
                       tickLine={false}
                       axisLine={{ stroke: 'rgba(255,255,255,0.06)' }}
                     />
                     <YAxis
-                      tick={{ fill: '#4a5568', fontSize: 11 }}
+                      tick={{ fill: 'var(--chalk-faint)', fontSize: 11 }}
                       tickLine={false}
                       axisLine={false}
                       tickFormatter={v => `$${v}`}
@@ -392,7 +392,9 @@ export default function Evaluate() {
                       dataKey="bandLow"
                       isAnimationActive={false}
                       stroke="none"
-                      fill="#0D1117"
+                      // Masks the band below p10. Must follow the surface, or it
+                      // paints a near-black block across the chart in light mode.
+                      fill="var(--hull)"
                       fillOpacity={1}
                       legendType="none"
                       dot={false}
@@ -433,8 +435,8 @@ export default function Evaluate() {
                     />
 
                     <Legend
-                      wrapperStyle={{ fontSize: 11, color: '#64748b', paddingTop: 6 }}
-                      formatter={v => <span style={{ color: '#64748b' }}>{v}</span>}
+                      wrapperStyle={{ fontSize: 11, color: 'var(--chalk-dim)', paddingTop: 6 }}
+                      formatter={v => <span style={{ color: 'var(--chalk-dim)' }}>{v}</span>}
                     />
                   </ComposedChart>
                 </ResponsiveContainer>
