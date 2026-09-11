@@ -12,22 +12,42 @@ spot.
 
 ## Running it
 
-Two processes. The dashboard works on its own, with the data bundled into the
-build; the backend adds live ingestion, fitted forecasts and berth-level port
-data.
+```bash
+./run.sh
+```
+
+That is the whole thing. On a fresh clone it creates the Python environment,
+installs both dependency sets, trains the forecasting models from the committed
+snapshot, then starts the API on :8000 and the dashboard on :5173. Ctrl-C stops
+both.
+
+| Command | What it does |
+|---|---|
+| `./run.sh` | Set up whatever is missing, then run both |
+| `./run.sh --setup` | Install and train, then stop |
+| `./run.sh --backend` / `--frontend` | One side only |
+| `./run.sh --offline` | Block every outbound call and prove the offline path |
+| `./run.sh --retrain` | Refit the models before starting |
+| `./run.sh --test` | Both test suites, then stop |
+| `./run.sh --stop` | Free the two ports after an unclean exit |
+
+It insists on CPython 3.11, 3.12 or 3.13 and refuses 3.14, where statsmodels and
+pandas have no wheels and try to build from source. If `uv` is installed it uses
+that and fetches a suitable interpreter; otherwise it uses `venv`.
+
+<details>
+<summary>Running the two processes by hand</summary>
 
 ```bash
-# Frontend
-npm install
-npm run dev                       # http://localhost:5173
+npm install && npm run dev                            # http://localhost:5173
 
-# Backend, in another shell
 cd backend
-python -m venv .venv && source .venv/bin/activate   # CPython 3.11 or 3.12
+python3.12 -m venv .venv && source .venv/bin/activate
 pip install -r requirements.txt
-python train.py                                     # fits from the committed snapshot
-uvicorn app.main:app --reload --port 8000           # http://localhost:8000/docs
+python train.py                                       # fits from the committed snapshot
+uvicorn app.main:app --reload --port 8000             # http://localhost:8000/docs
 ```
+</details>
 
 Point the dashboard elsewhere with `VITE_API_BASE` in a `.env` file. It defaults
 to `http://localhost:8000`.
