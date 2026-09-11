@@ -291,7 +291,7 @@ export default function Evaluate() {
               <div className="eval-summary-grid">
                 <div className="eval-kv">
                   <span>CVC/Spot Savings</span>
-                  <b style={{ color: result.is_cvc_favorable ? 'var(--accent-green)' : 'var(--accent-amber)' }}>
+                  <b style={{ color: result.is_cvc_favorable ? 'var(--sig-green)' : 'var(--sig-amber)' }}>
                     {result.is_cvc_favorable ? '+' : '-'}₹{result.base_case_delta_cr.toFixed(1)} Cr
                   </b>
                 </div>
@@ -379,6 +379,7 @@ export default function Evaluate() {
                     <Area
                       type="monotone"
                       dataKey="bandHigh"
+                      isAnimationActive={false}
                       stroke="none"
                       fill="url(#bandGrad)"
                       fillOpacity={1}
@@ -389,6 +390,7 @@ export default function Evaluate() {
                     <Area
                       type="monotone"
                       dataKey="bandLow"
+                      isAnimationActive={false}
                       stroke="none"
                       fill="#0D1117"
                       fillOpacity={1}
@@ -401,6 +403,7 @@ export default function Evaluate() {
                     <Line
                       type="monotone"
                       dataKey="p90"
+                      isAnimationActive={false}
                       stroke="#f87171"
                       strokeWidth={1.5}
                       strokeDasharray="4 3"
@@ -411,6 +414,7 @@ export default function Evaluate() {
                     <Line
                       type="monotone"
                       dataKey="p50"
+                      isAnimationActive={false}
                       stroke="#3b82f6"
                       strokeWidth={2.5}
                       dot={{ r: 4, fill: '#3b82f6', strokeWidth: 0 }}
@@ -420,6 +424,7 @@ export default function Evaluate() {
                     <Line
                       type="monotone"
                       dataKey="p10"
+                      isAnimationActive={false}
                       stroke="#4ade80"
                       strokeWidth={1.5}
                       strokeDasharray="4 3"
@@ -470,7 +475,7 @@ export default function Evaluate() {
                     <td className="mono">${(v.cvc_voyage_total / 1000).toFixed(0)}K</td>
                     <td
                       className="mono"
-                      style={{ color: v.voyage_savings >= 0 ? 'var(--accent-green)' : 'var(--accent-red)' }}
+                      style={{ color: v.voyage_savings >= 0 ? 'var(--sig-green)' : 'var(--sig-red)' }}
                     >
                       {v.voyage_savings >= 0 ? '+' : ''}${(v.voyage_savings / 1000).toFixed(0)}K
                     </td>

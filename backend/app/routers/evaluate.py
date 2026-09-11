@@ -184,14 +184,29 @@ def post_evaluate(req: EvaluateRequest, state: AppState = Depends(get_state)) ->
         "p10_rates": p10,
         "p50_rates": [round(r, 3) for r in rates],
         "p90_rates": p90,
+        # Every field the evaluator page's VoyageBreakdown declares. It reads
+        # them straight into .toFixed(), so a missing one is a crash rather than
+        # a blank cell.
         "voyages": [
             {
-                "voyage_number": v["index"],
-                "spot_rate": v["rate_usd_per_t"],
-                "spot_cost_usd": round(v["spot_cr"] * costing.CRORE / usd, 2),
-                "cvc_cost_usd": round(v["cvc_cr"] * costing.CRORE / usd, 2),
+                "voyage_number": v["voyage_number"],
+                "spot_freight_rate": v["spot_freight_rate"],
+                "spot_freight_cost": v["spot_freight_cost"],
+                "cvc_freight_rate": v["cvc_freight_rate"],
+                "cvc_freight_cost": v["cvc_freight_cost"],
+                "bunker_adj_cost": v["bunker_adj_cost"],
+                "port_charges": v["port_charges"],
+                "wait_days": v["wait_days"],
+                "demurrage_cost": v["demurrage_cost"],
+                "lighterage_tonnage": v["lighterage_tonnage"],
+                "lighterage_cost": v["lighterage_cost"],
+                "spot_voyage_total": v["spot_voyage_total"],
+                "cvc_voyage_total": v["cvc_voyage_total"],
+                "voyage_savings": v["voyage_savings"],
+                "p10_spot_rate": p10[i],
+                "p90_spot_rate": p90[i],
             }
-            for v in result["voyages"]
+            for i, v in enumerate(result["voyages"])
         ],
         "lighterage_plan": {
             "is_required": plan is not None,
