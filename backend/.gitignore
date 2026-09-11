@@ -12,5 +12,8 @@ data/cache*.db-shm
 data/reference/ais_positions.csv
 data/reference/ais_*.csv
 
+# This machine's sync client leaves " 2" copies behind; catch those too.
+*\ 2.*
+
 # Trained artefacts. Regenerate with `python train.py`.
 models/*.pkl
