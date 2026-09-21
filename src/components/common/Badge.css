@@ -1,0 +1,33 @@
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.2rem 0.55rem;
+  border-radius: var(--radius-sm);
+  font-size: 0.7rem;
+  font-weight: 600;
+  font-family: var(--font-ui);
+  line-height: 1;
+  transition: background-color var(--transition), color var(--transition);
+}
+
+.badge-green  { background: var(--sig-green-dim);  color: var(--sig-green); }
+.badge-amber  { background: var(--sig-amber-dim);  color: var(--sig-amber); }
+.badge-red    { background: var(--sig-red-dim);    color: var(--sig-red);   }
+.badge-blue   { background: var(--sig-blue-dim);   color: var(--sig-blue);  }
+.badge-copper { background: var(--copper-dim);     color: var(--copper);    }
+.badge-muted  { background: var(--rule);           color: var(--chalk-dim); }
+
+.dot {
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+.dot-green  { background: var(--sig-green); }
+.dot-amber  { background: var(--sig-amber); }
+.dot-red    { background: var(--sig-red);   }
+.dot-blue   { background: var(--sig-blue);  }
+.dot-copper { background: var(--copper);    }
+.dot-muted  { background: var(--chalk-dim); }

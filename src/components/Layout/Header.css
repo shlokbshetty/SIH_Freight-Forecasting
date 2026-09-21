@@ -6,7 +6,7 @@
   background: var(--hull);
   border-bottom: 1px solid var(--rule);
   flex-shrink: 0;
-  height: 52px;
+  height: 54px;
   gap: 1rem;
 }
 
@@ -17,14 +17,14 @@
 }
 
 .app-header__title {
-  font-size: 0.85rem;
+  font-size: 0.9rem;
   font-weight: 600;
   color: var(--chalk);
   font-family: var(--font-ui);
 }
 
 .app-header__sub {
-  font-size: 0.65rem;
+  font-size: 0.68rem;
   color: var(--chalk-faint);
 }
 
@@ -33,6 +33,44 @@
   align-items: center;
   gap: 0.75rem;
   flex-shrink: 0;
+}
+
+/* Quick Search Button */
+.app-header__search {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: var(--deck);
+  border: 1px solid var(--rule-strong);
+  border-radius: var(--radius);
+  padding: 0.35rem 0.65rem;
+  color: var(--chalk-dim);
+  cursor: pointer;
+  font-family: var(--font-ui);
+  font-size: 0.75rem;
+  transition: border-color var(--transition), color var(--transition);
+}
+
+.app-header__search:hover {
+  border-color: var(--copper-rule);
+  color: var(--chalk);
+}
+
+.app-header__search-text {
+  display: inline;
+}
+
+.app-header__kbd {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.15rem;
+  background: var(--deck-raised);
+  border: 1px solid var(--rule-strong);
+  border-radius: 3px;
+  padding: 0.1rem 0.35rem;
+  font-size: 0.65rem;
+  font-family: var(--font-mono);
+  color: var(--chalk-faint);
 }
 
 /* Clock */
@@ -91,21 +129,6 @@
   border: 1.5px solid var(--hull);
 }
 
-/* Status */
-.app-header__status {
-  display: flex;
-  align-items: center;
-  gap: 0.35rem;
-  font-size: 0.68rem;
-  font-weight: 600;
-  color: var(--sig-green);
-  font-family: var(--font-mono);
-  background: var(--sig-green-dim);
-  border: 1px solid rgba(61,220,132,0.2);
-  padding: 0.25rem 0.6rem;
-  border-radius: var(--radius);
-}
-
 /* Theme toggle */
 .app-header__theme-toggle {
   width: 32px;
@@ -124,4 +147,10 @@
   background: var(--deck-raised);
   color: var(--chalk);
   transform: rotate(20deg);
+}
+
+@media (max-width: 800px) {
+  .app-header__search-text, .app-header__kbd {
+    display: none;
+  }
 }

@@ -1,7 +1,7 @@
 import { useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
-  AlertTriangle, ArrowRight, CalendarClock, Ship, TrendingDown, TrendingUp,
+  AlertTriangle, ArrowRight, CalendarClock, Ship, Sparkles, Anchor
 } from 'lucide-react';
 import { apiGet } from '../lib/api';
 import { useApiResource } from '../hooks/useApiResource';
@@ -10,6 +10,10 @@ import { fallbackMarketSeries, fallbackPorts } from '../lib/fallbacks';
 import type { PortsResponse } from '../lib/apiTypes';
 import type { BundledSeries } from '../lib/fallbacks';
 import DataOriginNotice from '../components/common/DataOriginNotice';
+import OnboardingBanner from '../components/common/OnboardingBanner';
+import StatCard from '../components/common/StatCard';
+import Card from '../components/common/Card';
+import Badge from '../components/common/Badge';
 import { VESSEL_CLASSES, VESSEL_SPECS } from '../data/vessels';
 import './CommandCenter.css';
 
@@ -33,8 +37,7 @@ function lastAndPrior(points: { value: number }[] | undefined, back = 5) {
   return { now, move };
 }
 
-/** Standing congestion level to a signal tone, used when no live wait is known. */
-function capTone(level: string): string {
+function capTone(level: string): 'red' | 'amber' | 'green' {
   return level === 'high' ? 'red' : level === 'medium' ? 'amber' : 'green';
 }
 
@@ -74,17 +77,39 @@ export default function CommandCenter() {
     n === null ? '—' : `${prefix}${n.toLocaleString('en-US', { minimumFractionDigits: digits, maximumFractionDigits: digits })}`;
 
   const stats = [
-    { id: 'stat-bdi', label: `Baltic Dry${s['baltic.bdi']?.is_proxy ? ' (proxy)' : ''}`, value: fmt(bdi.now, 0), move: bdi.move },
-    { id: 'stat-bunker', label: 'VLSFO Singapore', value: fmt(bunker.now, 0, '$'), move: bunker.move, invert: true },
-    { id: 'stat-coal', label: 'Thermal coal API2', value: fmt(coal.now, 1, '$'), move: coal.move },
-    { id: 'stat-fx', label: 'USD/INR', value: fmt(fx.now, 2, '₹'), move: fx.move, invert: true },
+    {
+      id: 'stat-bdi',
+      label: `Baltic Dry Index${s['baltic.bdi']?.is_proxy ? ' (proxy)' : ''}`,
+      value: fmt(bdi.now, 0),
+      move: bdi.move,
+      icon: <Sparkles size={14} />,
+    },
+    {
+      id: 'stat-bunker',
+      label: 'VLSFO Singapore Bunker',
+      value: fmt(bunker.now, 0, '$'),
+      move: bunker.move,
+      invert: true,
+      icon: <Anchor size={14} />,
+    },
+    {
+      id: 'stat-coal',
+      label: 'Thermal Coal API2',
+      value: fmt(coal.now, 1, '$'),
+      move: coal.move,
+      icon: <Ship size={14} />,
+    },
+    {
+      id: 'stat-fx',
+      label: 'USD / INR Exchange',
+      value: fmt(fx.now, 2, '₹'),
+      move: fx.move,
+      invert: true,
+      icon: <CalendarClock size={14} />,
+    },
   ];
 
-  // Ports worth looking at now: longest queues first.
   const watchlist = useMemo(() => {
-    // Rank on observed waiting when the congestion feed is up, and on the
-    // port's standing congestion level when it is not, so the panel still
-    // ranks something rather than emptying out.
     const level: Record<string, number> = { high: 3, medium: 2, low: 1 };
     return [...ports.data.discharge_ports]
       .sort((a, b) => {
@@ -112,18 +137,18 @@ export default function CommandCenter() {
       'Backend offline',
       'Berth detail unavailable',
       'Forecasts unfitted',
-      'Start the backend for live rates',
+      'Start backend for live market feeds',
     ];
   };
 
   const ticker = buildTicker();
 
   return (
-    <div className="cc">
-      {/* Ticker */}
+    <div className="cc animate-fade-in">
+      {/* Live Market Ticker */}
       <div className="cc__ticker">
         <span className={`cc__ticker-label ${online ? '' : 'cc__ticker-label--off'}`}>
-          {online ? 'LIVE' : 'CACHE'}
+          {online ? 'LIVE FEED' : 'CACHED'}
         </span>
         <div className="ticker-wrap">
           <div className="ticker-inner">
@@ -135,6 +160,8 @@ export default function CommandCenter() {
       </div>
 
       <div className="page-content">
+        <OnboardingBanner />
+
         <div className="cc__notice">
           <DataOriginNotice
             origin={market.origin}
@@ -144,37 +171,33 @@ export default function CommandCenter() {
           />
         </div>
 
-        {/* Stat cards */}
+        {/* High-Level KPI Stat Cards */}
         <div className="grid-4 cc__stats">
           {stats.map(st => {
             const up = (st.move ?? 0) >= 0;
-            // For a cost line, up is bad news, so the colour follows meaning
-            // rather than direction.
             const good = st.invert ? !up : up;
+            const badgeVariant = st.move === null ? 'muted' : good ? 'green' : 'red';
+            const badgeText = st.move === null
+              ? 'No move'
+              : `${up ? '▲' : '▼'} ${Math.abs(st.move).toFixed(1)}% / wk`;
+
             return (
-              <div className="card" key={st.id} id={st.id}>
-                <p className="card-title">{st.label}</p>
-                <p className="stat-value">{st.value}</p>
-                <p className={`stat-delta ${good ? 'up' : 'down'}`}>
-                  {st.move === null ? (
-                    <span className="cc__no-move">no recent move</span>
-                  ) : (
-                    <>
-                      {up ? <TrendingUp size={12} style={{ display: 'inline', marginRight: 4 }} />
-                          : <TrendingDown size={12} style={{ display: 'inline', marginRight: 4 }} />}
-                      {Math.abs(st.move).toFixed(1)}% on the week
-                    </>
-                  )}
-                </p>
-              </div>
+              <StatCard
+                key={st.id}
+                title={st.label}
+                value={st.value}
+                badgeText={badgeText}
+                badgeVariant={badgeVariant}
+                icon={st.icon}
+                subtext="Updated live via FreightIQ feed"
+              />
             );
           })}
         </div>
 
         <div className="cc__grid">
-          {/* Market summary */}
-          <div className="card cc__market">
-            <p className="card-title">Route rates by vessel class</p>
+          {/* Vessel Class Rates */}
+          <Card title="Route Rates by Vessel Class" subtitle="Per-tonne freight benchmark overview">
             <div className="cc__rate-rows">
               {rates.map(r => (
                 <div className="cc__rate-row" key={r.cls}>
@@ -183,38 +206,38 @@ export default function CommandCenter() {
                   <span className="cc__rate-val mono">
                     {r.now === null ? '—' : `$${r.now.toFixed(2)}/T`}
                   </span>
-                  <span className={`cc__rate-move mono ${(r.move ?? 0) >= 0 ? 'down' : 'up'}`}>
-                    {r.move === null ? '' : `${r.move >= 0 ? '+' : '−'}${Math.abs(r.move).toFixed(1)}%`}
+                  <span className="cc__rate-badge">
+                    <Badge variant={(r.move ?? 0) >= 0 ? 'red' : 'green'} dot>
+                      {r.move === null ? '0.0%' : `${r.move >= 0 ? '+' : '−'}${Math.abs(r.move).toFixed(1)}%`}
+                    </Badge>
                   </span>
                 </div>
               ))}
             </div>
             <p className="cc__market-note">
-              Per-tonne freight falls as the ship gets bigger: a Capesize spreads one voyage over
-              five times the cargo a Handysize carries. A move against you is a rate rise, so the
-              arrows follow cost, not price.
+              Per-tonne freight rates scale inversely with vessel deadweight tonnage. Capesize spreads voyage cost over 5× the cargo of a Handysize.
             </p>
-          </div>
+          </Card>
 
-          {/* Port watchlist */}
-          <div className="card cc__watch">
-            <p className="card-title">Ports worth watching</p>
+          {/* Port Queue Watchlist */}
+          <Card title="Ports Worth Watching" subtitle="Congestion & waiting time watchlist">
             {watchlist.length === 0 ? (
-              <p className="cc__no-move">No congestion data. Start the backend to populate it.</p>
+              <p className="cc__no-move">No congestion data. Start backend services to populate live port status.</p>
             ) : (
               <div className="cc__watch-rows">
                 {watchlist.map(p => {
                   const wait = p.live.wait_days;
-                  const tone = wait === null ? 'muted' : wait >= 5 ? 'red' : wait >= 3 ? 'amber' : 'green';
+                  const tone = wait === null ? capTone(p.congestion_level) : wait >= 5 ? 'red' : wait >= 3 ? 'amber' : 'green';
                   return (
                     <button key={p.id} className="cc__watch-row" onClick={() => navigate('/matcher')}>
-                      <span className={`dot dot-${tone === 'muted' ? 'amber' : tone}`} />
-                      <span className="cc__watch-name">{p.name}</span>
+                      <span className="cc__watch-name-wrap">
+                        <Badge variant={tone} dot>
+                          {wait === null ? p.congestion_level.toUpperCase() : `${wait.toFixed(1)} d wait`}
+                        </Badge>
+                        <span className="cc__watch-name">{p.name}</span>
+                      </span>
                       <span className="cc__watch-berths mono">
                         {p.berths.length > 0 ? `${p.berths.length} berths` : '—'}
-                      </span>
-                      <span className={`cc__watch-wait mono cc__watch-wait--${wait === null ? capTone(p.congestion_level) : tone}`}>
-                        {wait === null ? p.congestion_level : `${wait.toFixed(1)} d`}
                       </span>
                     </button>
                   );
@@ -222,27 +245,30 @@ export default function CommandCenter() {
               </div>
             )}
             <p className="cc__market-note">
-              Waiting days come from the congestion feed. A port that discharges fast but queues for
-              a week is not a fast port.
+              Queuing days directly impact demurrage risk. Fast discharge rates are offset by long anchorage queues.
             </p>
-          </div>
+          </Card>
 
-          {/* Quick actions */}
-          <div className="card cc__quick-actions">
-            <p className="card-title">Where to go next</p>
-            {[
-              { label: 'Price a multi-voyage programme', to: '/contracts', icon: Ship },
-              { label: 'Check when to fix', to: '/timing', icon: CalendarClock },
-              { label: 'Match a cargo to a berth', to: '/matcher', icon: ArrowRight },
-              { label: 'Review risks and data health', to: '/risk', icon: AlertTriangle },
-            ].map(a => (
-              <button key={a.to} className="cc__quick-btn" onClick={() => navigate(a.to)}>
-                <span className="cc__quick-icon"><a.icon size={14} /></span>
-                {a.label}
-                <ArrowRight size={13} className="cc__quick-arrow" />
-              </button>
-            ))}
-          </div>
+          {/* Navigation Action Shortcuts */}
+          <Card title="Where to Go Next" subtitle="Key analytics & simulation tools">
+            <div className="cc__quick-grid">
+              {[
+                { label: 'Contract Simulator (Spot vs CVC)', to: '/contracts', icon: Ship, desc: 'Model charter structures' },
+                { label: 'Market Entry Timing', to: '/timing', icon: CalendarClock, desc: 'Calculate delay exposure' },
+                { label: 'Vessel & Cargo Matcher', to: '/matcher', icon: Anchor, desc: 'Check berth compatibility' },
+                { label: 'Risk & Data Health', to: '/risk', icon: AlertTriangle, desc: 'Source freshness status' },
+              ].map(a => (
+                <button key={a.to} className="cc__quick-btn" onClick={() => navigate(a.to)}>
+                  <span className="cc__quick-icon"><a.icon size={15} /></span>
+                  <div className="cc__quick-text">
+                    <span className="cc__quick-title">{a.label}</span>
+                    <span className="cc__quick-desc">{a.desc}</span>
+                  </div>
+                  <ArrowRight size={14} className="cc__quick-arrow" />
+                </button>
+              ))}
+            </div>
+          </Card>
         </div>
       </div>
     </div>

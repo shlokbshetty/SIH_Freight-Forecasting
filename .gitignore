@@ -35,3 +35,11 @@ dist-ssr
 
 # Output from ./run.sh
 .run-logs/
+
+# Agent & Impeccable extension files
+.agent/
+.impeccable/
+.impeccable*
+.env
+.env.*
+

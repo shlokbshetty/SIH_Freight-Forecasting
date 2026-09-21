@@ -129,6 +129,22 @@
   flex: 1;
 }
 
+.sidebar__item-tag {
+  font-size: 0.6rem;
+  font-weight: 700;
+  padding: 0.1rem 0.35rem;
+  border-radius: 3px;
+  background: var(--copper-dim);
+  color: var(--copper);
+  line-height: 1;
+  font-family: var(--font-mono);
+}
+
+.sidebar__item-tag--alert {
+  background: var(--sig-amber-dim);
+  color: var(--sig-amber);
+}
+
 /* ── Collapse btn ──────────────────────── */
 .sidebar__collapse-btn {
   display: flex;

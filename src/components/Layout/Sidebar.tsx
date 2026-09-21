@@ -6,8 +6,15 @@ import {
 } from 'lucide-react';
 import './Sidebar.css';
 
-const NAV_ITEMS = [
-  { path: '/',           label: 'Command Center',    icon: LayoutDashboard },
+interface NavItem {
+  path: string;
+  label: string;
+  icon: any;
+  badge?: string;
+}
+
+const NAV_ITEMS: NavItem[] = [
+  { path: '/',           label: 'Command Center',    icon: LayoutDashboard, badge: 'Live' },
   { path: '/map',        label: 'Route Map',          icon: Map             },
   { path: '/evaluate',   label: 'Evaluate (CVC)',     icon: Calculator      },
   { path: '/forecast',   label: 'Forecast',           icon: TrendingUp      },
@@ -15,19 +22,15 @@ const NAV_ITEMS = [
   { path: '/contracts',  label: 'Contract Simulator', icon: FileText        },
   { path: '/timing',     label: 'Market Timing',      icon: CalendarClock   },
   { path: '/idle',       label: 'Idle & Ballast',     icon: Route           },
-  { path: '/risk',       label: 'Risk & Data Health', icon: AlertTriangle   },
-] as const;
+  { path: '/risk',       label: 'Risk & Data Health', icon: AlertTriangle,   badge: 'Alert' },
+];
 
 export default function Sidebar() {
-  // Initialise from the viewport rather than setting state inside an effect:
-  // starting at false and immediately correcting causes a second render and a
-  // visible flash of the expanded sidebar on a narrow screen.
   const [collapsed, setCollapsed] = useState(
     () => typeof window !== 'undefined' && window.matchMedia('(max-width: 1024px)').matches,
   );
   const location = useLocation();
 
-  // Keep following the viewport as it changes.
   useEffect(() => {
     const mq = window.matchMedia('(max-width: 1024px)');
     const handler = (e: MediaQueryListEvent) => setCollapsed(e.matches);
@@ -36,7 +39,7 @@ export default function Sidebar() {
   }, []);
 
   return (
-    <aside className={`sidebar ${collapsed ? 'sidebar--collapsed' : ''}`}>
+    <aside className={`sidebar ${collapsed ? 'sidebar--collapsed' : ''}`} aria-label="Main sidebar navigation">
       {/* Wordmark */}
       <div className="sidebar__logo">
         <div className="sidebar__logo-mark">
@@ -54,8 +57,8 @@ export default function Sidebar() {
 
       {/* Navigation */}
       <nav className="sidebar__nav">
-        {!collapsed && <span className="sidebar__nav-label">Navigation</span>}
-        {NAV_ITEMS.map(({ path, label, icon: Icon }) => {
+        {!collapsed && <span className="sidebar__nav-label">PLATFORM MODULES</span>}
+        {NAV_ITEMS.map(({ path, label, icon: Icon, badge }) => {
           const isActive = path === '/'
             ? location.pathname === '/'
             : location.pathname.startsWith(path);
@@ -70,6 +73,11 @@ export default function Sidebar() {
                 <Icon size={18} />
               </span>
               {!collapsed && <span className="sidebar__item-label">{label}</span>}
+              {!collapsed && badge && (
+                <span className={`sidebar__item-tag ${badge === 'Alert' ? 'sidebar__item-tag--alert' : ''}`}>
+                  {badge}
+                </span>
+              )}
               {isActive && <span className="sidebar__item-indicator" />}
             </NavLink>
           );
@@ -81,6 +89,7 @@ export default function Sidebar() {
         className="sidebar__collapse-btn"
         onClick={() => setCollapsed(c => !c)}
         title={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+        aria-label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
       >
         {collapsed ? <ChevronRight size={16} /> : <ChevronLeft size={16} />}
       </button>

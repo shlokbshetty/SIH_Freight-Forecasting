@@ -1,12 +1,12 @@
 import { useLocation } from 'react-router-dom';
 import { useEffect, useState } from 'react';
-import { Bell, Clock, Moon, Sun } from 'lucide-react';
+import { Bell, Clock, Moon, Sun, Search, Command } from 'lucide-react';
 import { useTheme } from '../../store/themeStore';
 import ConnectionBadge from './ConnectionBadge';
 import './Header.css';
 
 const ROUTE_META: Record<string, { title: string; sub: string }> = {
-  '/':          { title: 'Command Center',    sub: 'Operational overview & live market alerts' },
+  '/':          { title: 'Command Center',    sub: 'Operational overview & live market intelligence' },
   '/map':       { title: 'Route Map',          sub: 'Interactive GIS port & vessel tracking' },
   '/evaluate':  { title: 'Evaluate (CVC)',     sub: 'Spot vs CVC with quantile rate bands' },
   '/forecast':  { title: 'Freight Forecast',   sub: 'Rate prediction with confidence bands' },
@@ -44,8 +44,15 @@ export default function Header() {
       </div>
 
       <div className="app-header__right">
+        {/* Quick search shortcut hint */}
+        <button className="app-header__search" title="Quick Navigation (⌘K)" aria-label="Quick search">
+          <Search size={14} />
+          <span className="app-header__search-text">Search routes or vessels...</span>
+          <kbd className="app-header__kbd"><Command size={10} />K</kbd>
+        </button>
+
         {/* Live clock */}
-        <div className="app-header__clock">
+        <div className="app-header__clock" title="System Local Time (IST)">
           <Clock size={13} className="app-header__clock-icon" />
           <span className="app-header__clock-time mono">{timeStr}</span>
           <span className="app-header__clock-date">{dateStr} IST</span>
@@ -63,12 +70,12 @@ export default function Header() {
         </button>
 
         {/* Alerts bell */}
-        <button className="app-header__bell" id="header-alerts-btn" title="View alerts">
+        <button className="app-header__bell" id="header-alerts-btn" title="View operational alerts">
           <Bell size={16} />
           <span className="app-header__bell-dot" />
         </button>
 
-        {/* Where the numbers are coming from */}
+        {/* Data origin status badge */}
         <ConnectionBadge />
       </div>
     </header>

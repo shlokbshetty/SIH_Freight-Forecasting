@@ -1,0 +1,101 @@
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.45rem;
+  border-radius: var(--radius);
+  font-family: var(--font-ui);
+  font-weight: 500;
+  cursor: pointer;
+  border: 1px solid transparent;
+  transition: all var(--transition);
+  white-space: nowrap;
+  user-select: none;
+}
+
+.btn:focus-visible {
+  outline: 2px solid var(--copper);
+  outline-offset: 2px;
+}
+
+/* Sizes */
+.btn-sm { padding: 0.3rem 0.65rem; font-size: 0.75rem; }
+.btn-md { padding: 0.45rem 0.9rem; font-size: 0.8rem; }
+.btn-lg { padding: 0.65rem 1.25rem; font-size: 0.9rem; }
+
+/* Variants */
+.btn-primary {
+  background: var(--copper);
+  color: #ffffff;
+  border-color: var(--copper);
+}
+.btn-primary:hover:not(:disabled) {
+  background: #b8693a;
+  border-color: #b8693a;
+  transform: translateY(-1px);
+}
+.btn-primary:active:not(:disabled) {
+  transform: translateY(0);
+}
+
+.btn-secondary {
+  background: var(--deck-raised);
+  color: var(--chalk);
+  border-color: var(--rule-strong);
+}
+.btn-secondary:hover:not(:disabled) {
+  background: var(--deck);
+  border-color: var(--chalk-dim);
+  transform: translateY(-1px);
+}
+
+.btn-ghost {
+  background: transparent;
+  color: var(--chalk-dim);
+  border-color: var(--rule-strong);
+}
+.btn-ghost:hover:not(:disabled) {
+  background: var(--deck);
+  color: var(--chalk);
+  border-color: var(--rule-strong);
+}
+
+.btn-active {
+  background: var(--copper-dim);
+  color: var(--copper);
+  border-color: var(--copper-rule);
+}
+
+.btn-danger {
+  background: var(--sig-red-dim);
+  color: var(--sig-red);
+  border-color: var(--sig-red-dim);
+}
+.btn-danger:hover:not(:disabled) {
+  background: var(--sig-red);
+  color: #ffffff;
+}
+
+.btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none !important;
+}
+
+/* Spinner */
+.btn-spinner {
+  width: 12px;
+  height: 12px;
+  border: 2px solid currentColor;
+  border-right-color: transparent;
+  border-radius: 50%;
+  animation: btn-spin 0.6s linear infinite;
+}
+
+@keyframes btn-spin {
+  to { transform: rotate(360deg); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .btn { transition: none; transform: none !important; }
+}
