@@ -1,134 +1,151 @@
 # FreightIQ: Predictive Maritime Freight & Chartering Optimization
 
-[![React](https://img.shields.io/badge/React-19.2%20%7C%20TypeScript-61DAFB?style=for-the-badge&logo=react&logoColor=black)](https://react.dev/)
-[![FastAPI](https://img.shields.io/badge/FastAPI-Python_3.12-009688?style=for-the-badge&logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com/)
-[![Machine Learning](https://img.shields.io/badge/ML-XGBoost%20%7C%20LightGBM%20%7C%20Prophet-FF6F00?style=for-the-badge)](https://xgboost.readthedocs.io/)
-[![Leaflet](https://img.shields.io/badge/Geospatial-React--Leaflet-199900?style=for-the-badge&logo=leaflet&logoColor=white)](https://leafletjs.com/)
-[![Recharts](https://img.shields.io/badge/Analytics-Recharts-22b5bf?style=for-the-badge)](https://recharts.org/)
+[![React](https://img.shields.io/badge/React-19.2.8%20%7C%20TypeScript_6.0-61DAFB?style=for-the-badge&logo=react&logoColor=black)](https://react.dev/)
+[![FastAPI](https://img.shields.io/badge/FastAPI-0.115%20%7C%20Python_3.12-009688?style=for-the-badge&logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com/)
+[![SARIMAX](https://img.shields.io/badge/Forecasting-Statsmodels_SARIMAX%20%7C%20GBR-7c3aed?style=for-the-badge)](https://www.statsmodels.org/)
+[![Leaflet](https://img.shields.io/badge/Geospatial-React--Leaflet_5.0-199900?style=for-the-badge&logo=leaflet&logoColor=white)](https://leafletjs.com/)
+[![Recharts](https://img.shields.io/badge/Analytics-Recharts_3.10-22b5bf?style=for-the-badge)](https://recharts.org/)
 [![License](https://img.shields.io/badge/License-MIT-blue.svg?style=for-the-badge)](LICENSE)
 
-> **Predictive freight rate forecasting and vessel-chartering optimization platform for bulk maritime cargo import logistics across India's East Coast major deepwater ports.**
+**FreightIQ** (`SIH_Freight-Forecasting`) is an offline-resilient maritime freight forecasting and bulk vessel-chartering decision platform engineered for dry-bulk cargo imports (thermal coal, coking coal, iron ore, limestone, fertilizers) across India's East Coast ports (**Paradip, Visakhapatnam, Gangavaram, Dhamra, Gopalpur, Haldia, and Sagar/Sandheads**). It pairs a **React 19 + TypeScript 6.0** analytical command deck with a **FastAPI + Statsmodels SARIMAX** quantitative backend that forecasts vessel-class freight rates (`Handysize`, `Supramax`, `Panamax`, `Capesize`) over 30-, 90-, and 180-day horizons, resolves berth-level physical compatibility with tidal and lighterage economics, and prices **Spot vs. Consecutive Voyage Charter (CVC) vs. Period Time Charter (PTC)** structures in both USD and Indian Rupee Crores (`₹ Cr`).
 
 ---
 
-## Architecture & Data Flow Diagram
+## System Architecture Overview
 
-```mermaid
-graph TD
-    subgraph MarketDataTier ["Market Indices & Maritime Ingestion"]
-        BDI["Baltic Dry Index (BDI) Feed"]
-        Bunkers["Bunker Fuel Pricing (VLSFO / MGO)"]
-        AIS["Port Congestion & AIS Vessel Telemetry"]
-        EastCoastPorts[("East Coast Ports: Paradip, Vizag, Haldia, Dhamra")]
-    end
+![FreightIQ System Architecture Overview](docs/assets/system-overview.svg)
 
-    subgraph AnalyticsEngine ["Quantitative Forecasting & Optimization"]
-        Ensemble["Ensemble Forecaster (XGBoost + LightGBM + Statsmodels)"]
-        BerthEngine["Berth Feasibility & Draft Restriction Checker"]
-        CVCOptimizer["Spot vs Consecutive Voyage Contract (CVC) Engine"]
-        DemurrageSim["Queue Time & Demurrage Risk Monte Carlo Engine"]
-    end
+FreightIQ is structured around a strict **zero-network-on-request-path** architecture across five tiers:
+1. **React 19 Operational Command Deck (`src/`)**: Ten specialized analytical views (`CommandCenter`, `Map`, `Forecast`, `Matcher`, `ContractComparison`, `Evaluate`, `MarketTiming`, `IdlePlanner`, `RiskAlerts`, `VoyageEditor`) backed by `useApiResource` with an 8-second `AbortController` timeout and automatic client-side fallback (`src/lib/fallbacks.ts`) when the backend is unreachable.
+2. **FastAPI Async Gateway (`backend/app/`)**: Seven modular routers (`ports`, `match`, `forecast`, `contract`, `evaluate`, `series`, `status`) serving strictly from local SQLite WAL cache and pre-fitted model bundles.
+3. **Quantitative Forecasting, Berth & Costing Engines**:
+   - **Log-Space SARIMAX Engine (`backend/models/project.py`)**: Fits `SARIMAX(1, 1, 1)` models with z-scored exogenous regressors (`log_bdi`, `log_gogl`, `log_sblk`, `log_bunker`, `log_coal`, `log_iron_ore`, `log_usdinr`, `monsoon`, and annual Fourier terms `month_sin`, `month_cos`), applying the Kalman filter (`SARIMAXResults.apply(..., refit=False)`) at request time without re-estimating parameters.
+   - **Berth-Level Physical & Lighterage Resolver (`backend/data/ports/resolver.py`)**: Evaluates vessel LOA, beam, commodity handling, and immersion draft (`TONNES_PER_CM`) against individual berth limits (`berths.csv`) and lighterage anchorages (`lighterage_nodes.csv`), returning commercially distinct `ACCEPT_ALL_TIDE`, `ACCEPT_HIGH_TIDE_ONLY`, or `REJECT` verdicts.
+   - **Voyage Costing & CVC/PTC Arbiter (`backend/app/costing.py` & `engine/`)**: Prices multi-voyage import programmes across Spot, CVC (with BAF hedge and queue reduction), and Period Time Charter (PTC), including multi-port split discharges (`/api/contract/multiport`).
+4. **Failure-Isolated Ingestion Adapters (`backend/data/adapters/`)**: Background `APScheduler` jobs pull TradingEconomics (`BDIY:IND`), Yahoo Finance (`GOGL`, `SBLK`, `MTF=F`, `TIO=F`), FRED (`DEXINUS`, `DEXUSAL`, `PCOALAUUSDM`), Open-Meteo marine weather, and reference CSV/JSON feeds via `SourceAdapter.safe_fetch()`.
+5. **SQLite WAL Cache & Committed Snapshot (`backend/data/cache.db` & `snapshot.json`)**: On cold boot, `ingest.bootstrap()` seeds `cache.db` from the committed `data/snapshot.json` so every endpoint and model training script (`train.py`) works 100% offline.
 
-    subgraph ServiceDelivery ["High-Performance Ingress & API"]
-        FastAPI["FastAPI Async Ingress Gateway (Port 8000)"]
-        CacheStore[("In-Memory Local Snapshot & Offline Cache")]
-        DegradeShield["Graceful Degradation & Data Freshness Tagging"]
-    end
-
-    subgraph CommandDeckClient ["Operational Maritime Dashboard"]
-        ViteReact["React 19 + TypeScript Analytical Workspace"]
-        GeoMap["Interactive Coastal Port Queue Geospatial Viewport"]
-        Charts["Rate Trajectory & Confidence Envelope Curves (Recharts)"]
-        DecisionMatrix["Chartering Decision Engine & Rupee Exposure Matrix"]
-    end
-
-    BDI --> Ensemble
-    Bunkers --> Ensemble
-    AIS --> BerthEngine
-    EastCoastPorts --> BerthEngine
-
-    Ensemble --> FastAPI
-    BerthEngine --> FastAPI
-    CVCOptimizer --> FastAPI
-    DemurrageSim --> FastAPI
-
-    FastAPI <--> CacheStore
-    FastAPI --> DegradeShield
-    DegradeShield --> ViteReact
-
-    ViteReact --> GeoMap
-    ViteReact --> Charts
-    ViteReact --> DecisionMatrix
-```
+For full architectural details, mathematical formulations, and data provenance rules, see [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
 
 ---
 
-## Core Features
+## Prerequisites
 
-- **Multi-Horizon Freight Forecasting**: Hybrid time-series ensemble combining gradient boosting (XGBoost, LightGBM) with statistical autoregressive models to project bulk commodity shipping rates over 30/60/90-day procurement cycles.
-- **Berth Feasibility & Draft Matrix**: Real-time matching of incoming Capesize, Panamax, Supramax, and Handymax vessel dimensions against East Coast port parameters (Paradip, Visakhapatnam, Gangavaram, Dhamra, Gopalpur, Haldia).
-- **Spot vs CVC Chartering Arbiter**: Quantitative optimization calculating rupee-denominated financial risk delta between locking long-term Consecutive Voyage Contracts versus spot market exposure.
-- **Port Congestion & Demurrage Simulation**: Pre-berthing waiting time estimator and demurrage penalty risk calculator parameterized on real-time vessel turnaround queues.
-- **Zero-Failure Offline Architecture**: Complete architectural decoupling guaranteeing all analytical dashboards render reliably offline with deterministic fallback caching and explicit freshness indicators.
-- **Enterprise Design System**: High-contrast operations room interface with keyboard accessibility, command palette shortcuts (⌘K), live time clocks, and high-density KPI widgets.
-
----
-
-## Tech Stack Directory
-
-| Layer | Technologies |
+| Requirement | Version / Details |
 | :--- | :--- |
-| **Frontend Platform** | React 19, TypeScript 6.0, Vite 8, React Router DOM 7, TailwindCSS |
-| **Data Visualization** | Recharts 3.10, Lucide React, React-Leaflet 5, Framer Motion |
-| **Backend & Ingress** | FastAPI, Uvicorn (ASGI), Python 3.11–3.13, Pydantic v2 |
-| **Quantitative ML** | XGBoost, LightGBM, Statsmodels, Scikit-learn, Pandas, NumPy |
-| **DevOps & Verification** | Oxlint High-Performance Linter, Pytest, Hypothesis (Property Testing), Shell Automation |
+| **Python** | **CPython `3.11`, `3.12`, or `3.13`** (Preferred: `3.12`; avoids compiling `statsmodels`/`pandas` from source on 3.14) |
+| **Node.js & npm** | **Node.js `v18.0+` / `v20+`** and `npm` |
+| **Optional Package Manager** | `uv` (automatically detected by `./run.sh` to provision CPython 3.12 virtualenvs) |
+| **External API Keys** | **None required** (all feeds are unauthenticated or degrade gracefully to cached snapshot data) |
 
 ---
 
-## Quickstart & Verification
+## Step-by-Step Local Setup & Execution
 
-### Prerequisites
-- **Python**: `3.11`, `3.12`, or `3.13` (CPython with pre-built binary wheels)
-- **Node.js**: `v18.0.0` or higher
-- **Package Managers**: `npm` and `pip` (or `uv`)
-
-### Automated Setup
-The unified orchestration script automatically sets up virtual environments, installs dependencies, trains the forecast models, and launches both services:
+### Option A: One-Command Orchestrated Launch (`./run.sh`)
+The repository includes an idempotent process-group orchestrator (`./run.sh`) that provisions `backend/.venv`, installs Python and npm dependencies, fits the SARIMAX models if pickles are missing, and launches both the FastAPI backend (`:8000`) and Vite dashboard (`:5173`):
 
 ```bash
-# Complete automated bootstrap and service launch
+# Full setup, offline model training (if needed), and concurrent launch
 ./run.sh
+
+# Useful flags:
+./run.sh --setup      # Install dependencies and train models, then exit
+./run.sh --backend    # Run FastAPI service only (:8000)
+./run.sh --frontend   # Run React Vite dashboard only (:5173)
+./run.sh --offline    # Run with FREIGHTIQ_OFFLINE=1 (blocks all outbound network calls)
+./run.sh --retrain    # Refit all SARIMAX pickles before starting
+./run.sh --test       # Execute backend pytest suite + frontend tsc, oxlint, and vite build
+./run.sh --stop       # Terminate any processes listening on :8000 and :5173
 ```
 
-### Manual Execution & Verification
-```bash
-# 1. Start the React TypeScript Client
-npm install
-npm run dev
+### Option B: Manual Step-by-Step Setup (Windows PowerShell / Linux / macOS)
 
-# 2. Configure and launch the Python ML Backend
+#### 1. Backend Setup & Model Training
+```bash
 cd backend
 python -m venv .venv
-# On Windows: .\.venv\Scripts\activate | On Unix: source .venv/bin/activate
-pip install -r requirements.txt
 
-# Fit the forecasting models from snapshot data
+# Activate virtual environment:
+# Windows PowerShell:
+.\.venv\Scripts\Activate.ps1
+# Linux / macOS:
+source .venv/bin/activate
+
+# Install runtime and test dependencies
+pip install -r requirements-dev.txt
+
+# Fit SARIMAX models for all 4 vessel classes from the committed snapshot
 python train.py
 
-# Launch FastAPI ASGI server
+# Start the FastAPI server on port 8000
 uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+```
+Open `http://localhost:8000/docs` for the interactive OpenAPI / Swagger UI.
+
+#### 2. Frontend Setup & Launch
+In a second terminal at the repository root:
+```bash
+# Copy environment template (defaults to VITE_API_BASE=http://localhost:8000)
+cp .env.example .env
+
+# Install dependencies and start Vite dev server on port 5173
+npm install
+npm run dev
+```
+Open `http://localhost:5173` in your browser.
+
+---
+
+## Build, Verification & Testing Commands
+
+```bash
+# 1. Run backend pytest suite (berth resolution, economics, ingestion, invariants)
+cd backend && pytest tests -q
+
+# 2. Run root-level engine & property-based (Hypothesis) test suites
+pytest tests -q
+
+# 3. Type-check TypeScript (6.0), run Oxlint, and build production bundle
+npm run lint
+npm run build
 ```
 
 ---
 
-## API & Route Specification
+## Configuration Mapping
 
-| HTTP Method | Route | Parameters / Payload | Expected Response | Description |
-| :--- | :--- | :--- | :--- | :--- |
-| `GET` | `/health` | None | `200 OK` + Service Status | Service health, model load state, and dataset freshness |
-| `GET` | `/api/rates/forecast` | Query: `route`, `vessel_class`, `horizon_days` | `200 OK` + `ForecastResponse` | Rate predictions with 80%/95% confidence intervals |
-| `GET` | `/api/ports/status` | Query: `port_id` | `200 OK` + `PortStatus[]` | Port queue depths, average turnaround, and weather alerts |
-| `POST` | `/api/chartering/compare`| JSON: `CharteringQueryDTO` | `200 OK` + `ComparisonMatrix` | Spot market vs CVC exposure comparison and cost arbitrage |
-| `POST` | `/api/berth/feasibility` | JSON: `VesselDimensionsDTO` | `200 OK` + `BerthFeasibility` | Verification of LOA, beam, and permissible draft across berths |
-| `GET` | `/api/analytics/indices` | Query: `index_code`, `range` | `200 OK` + `HistoricalIndex[]`| Baltic Dry Index historical trajectories and bunker spreads |
+All runtime parameters are controlled via environment variables (`backend/app/config.py` and `.env.example`):
+
+| Environment Variable | Default Value | Tier | Description |
+| :--- | :--- | :--- | :--- |
+| `VITE_API_BASE` | `http://localhost:8000` | Frontend | Base URL for FastAPI backend requests (`src/lib/api.ts`) |
+| `FREIGHTIQ_API_PORT` | `8000` | Orchestrator | TCP port used by `./run.sh` for Uvicorn |
+| `FREIGHTIQ_WEB_PORT` | `5173` | Orchestrator | TCP port used by `./run.sh` for Vite |
+| `FREIGHTIQ_OFFLINE` | `False` (`0`) | Backend | When `1`/`true`, blocks all outbound HTTP calls; adapters serve from `cache.db` |
+| `FREIGHTIQ_SCHEDULER` | `True` (`1`) | Backend | Enables the background `APScheduler` job (`ingest.refresh_all`) |
+| `FREIGHTIQ_REFRESH_MINUTES` | `60` | Backend | Interval in minutes between scheduled market data refreshes |
+| `FREIGHTIQ_REFRESH_ON_STARTUP` | `False` (`0`) | Backend | Whether to trigger a live network pull immediately during FastAPI startup |
+| `FREIGHTIQ_STALE_MINUTES` | `180` | Backend | Age threshold (minutes) after which `/api/data/status` flags a source as `is_stale` |
+| `FREIGHTIQ_HTTP_TIMEOUT` | `15` | Backend | Timeout in seconds for outbound adapter HTTP fetches |
+| `FREIGHTIQ_CORS_ORIGINS` | `http://localhost:5173,http://localhost:5174` | Backend | Comma-separated list of allowed CORS origins |
+| `FREIGHTIQ_CACHE_DB` | `backend/data/cache.db` | Backend | Path to the SQLite WAL observation cache |
+| `FREIGHTIQ_SNAPSHOT` | `backend/data/snapshot.json` | Backend | Path to the committed cold-boot snapshot file |
+| `FREIGHTIQ_METRICS` | `backend/models/metrics.json` | Backend | Path to the rolling-origin backtest accuracy JSON |
+| `FREIGHTIQ_AIS_FILE` | `backend/data/reference/ais_positions.csv` | Backend | Optional path to static MarineCadastre AIS CSV dump |
+| `FRED_API_KEY` | Unset (Optional) | Backend | Optional FRED API key (falls back to unauthenticated `fredgraph.csv` if unset) |
+| `TRADINGECONOMICS_KEY` | Unset (Optional) | Backend | Optional TradingEconomics credential for live `BDIY:IND` quotes |
+
+---
+
+## Documentation Index
+
+- **System Architecture & Quantitative Design**: [ARCHITECTURE.md](ARCHITECTURE.md) | [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)
+- **REST API & Schema Specification**: [API.md](API.md) | [docs/API.md](docs/API.md)
+- **Developer Environment & Testing Guide**: [DEVELOPMENT.md](DEVELOPMENT.md)
+- **Port & Berth Data Provenance**: [backend/data/ports/PROVENANCE.md](backend/data/ports/PROVENANCE.md)
+- **Contribution Guidelines**: [CONTRIBUTING.md](CONTRIBUTING.md)
+- **Security Policy**: [SECURITY.md](SECURITY.md)
+- **Support & FAQs**: [SUPPORT.md](SUPPORT.md)
+- **Product Roadmap & Vision**: [ROADMAP.md](ROADMAP.md) | [VISION.md](VISION.md)
+- **Release Changelog**: [CHANGELOG.md](CHANGELOG.md)
