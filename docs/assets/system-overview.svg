@@ -1,250 +1,473 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 860" width="100%" height="100%" font-family="Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 820" width="100%" height="100%" font-family="system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif">
+
   <defs>
-    <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#0b1120"/>
-      <stop offset="100%" stop-color="#1e293b"/>
+    <!-- Background Gradients -->
+    <linearGradient id="bgGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#080C16"/>
+      <stop offset="50%" stop-color="#0D1527"/>
+      <stop offset="100%" stop-color="#090E1A"/>
     </linearGradient>
-    <linearGradient id="uiHeader" x1="0%" y1="0%" x2="100%" y2="0%">
-      <stop offset="0%" stop-color="#0284c7"/>
-      <stop offset="100%" stop-color="#2563eb"/>
+
+    <!-- Subtle Dot Grid Pattern -->
+    <pattern id="dotGrid" width="24" height="24" patternUnits="userSpaceOnUse">
+      <circle cx="2" cy="2" r="1" fill="#334155" opacity="0.3"/>
+    </pattern>
+
+    <!-- Card Background Gradients -->
+    <linearGradient id="cardGradDark" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#182235"/>
+      <stop offset="100%" stop-color="#0F172A"/>
     </linearGradient>
-    <linearGradient id="apiHeader" x1="0%" y1="0%" x2="100%" y2="0%">
-      <stop offset="0%" stop-color="#0d9488"/>
-      <stop offset="100%" stop-color="#059669"/>
+    <linearGradient id="cardGradElevated" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#1E293B"/>
+      <stop offset="100%" stop-color="#111827"/>
     </linearGradient>
-    <linearGradient id="mlHeader" x1="0%" y1="0%" x2="100%" y2="0%">
-      <stop offset="0%" stop-color="#7c3aed"/>
-      <stop offset="100%" stop-color="#4f46e5"/>
+
+    <!-- Tier Container Gradients -->
+    <linearGradient id="tierGradCyan" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#0284C7" stop-opacity="0.14"/>
+      <stop offset="100%" stop-color="#0369A1" stop-opacity="0.04"/>
     </linearGradient>
-    <linearGradient id="storageHeader" x1="0%" y1="0%" x2="100%" y2="0%">
-      <stop offset="0%" stop-color="#d97706"/>
-      <stop offset="100%" stop-color="#ea580c"/>
+    <linearGradient id="tierGradIndigo" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#6366F1" stop-opacity="0.14"/>
+      <stop offset="100%" stop-color="#4F46E5" stop-opacity="0.04"/>
     </linearGradient>
-    <linearGradient id="adapterHeader" x1="0%" y1="0%" x2="100%" y2="0%">
-      <stop offset="0%" stop-color="#db2777"/>
-      <stop offset="100%" stop-color="#9333ea"/>
+    <linearGradient id="tierGradPurple" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#8B5CF6" stop-opacity="0.14"/>
+      <stop offset="100%" stop-color="#6D28D9" stop-opacity="0.04"/>
     </linearGradient>
-    <marker id="arrowBlue" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
-      <path d="M 0 1 L 10 5 L 0 9 z" fill="#38bdf8"/>
+    <linearGradient id="tierGradEmerald" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#10B981" stop-opacity="0.14"/>
+      <stop offset="100%" stop-color="#047857" stop-opacity="0.04"/>
+    </linearGradient>
+    <linearGradient id="tierGradAmber" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#F59E0B" stop-opacity="0.14"/>
+      <stop offset="100%" stop-color="#B45309" stop-opacity="0.04"/>
+    </linearGradient>
+
+    <!-- Ambient Glow Drops -->
+    <filter id="glowCyan" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur stdDeviation="40" result="blur"/>
+    </filter>
+    <filter id="glowPurple" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur stdDeviation="50" result="blur"/>
+    </filter>
+    <filter id="glowEmerald" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur stdDeviation="45" result="blur"/>
+    </filter>
+    <filter id="dropShadow" x="-5%" y="-5%" width="110%" height="115%">
+      <feDropShadow dx="0" dy="4" stdDeviation="6" flood-color="#000000" flood-opacity="0.5"/>
+    </filter>
+
+    <!-- Arrow Markers -->
+    <marker id="arrowCyan" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 1.5 L 8 5 L 0 8.5 z" fill="#38BDF8"/>
     </marker>
-    <marker id="arrowGreen" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
-      <path d="M 0 1 L 10 5 L 0 9 z" fill="#34d399"/>
+    <marker id="arrowEmerald" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 1.5 L 8 5 L 0 8.5 z" fill="#34D399"/>
     </marker>
-    <marker id="arrowViolet" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
-      <path d="M 0 1 L 10 5 L 0 9 z" fill="#a78bfa"/>
+    <marker id="arrowPurple" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 1.5 L 8 5 L 0 8.5 z" fill="#A855F7"/>
     </marker>
     <marker id="arrowAmber" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
-      <path d="M 0 1 L 10 5 L 0 9 z" fill="#fbbf24"/>
+      <path d="M 0 1.5 L 8 5 L 0 8.5 z" fill="#FBBF24"/>
     </marker>
-    <marker id="arrowPink" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
-      <path d="M 0 1 L 10 5 L 0 9 z" fill="#f472b6"/>
+    <marker id="arrowRose" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 1.5 L 8 5 L 0 8.5 z" fill="#FB7185"/>
     </marker>
-    <filter id="dropShadow" x="-5%" y="-5%" width="110%" height="110%">
-      <feDropShadow dx="0" dy="4" stdDeviation="6" flood-color="#000000" flood-opacity="0.35"/>
-    </filter>
   </defs>
 
-  <!-- Background -->
-  <rect width="1200" height="860" rx="16" fill="url(#bgGrad)"/>
 
-  <!-- Title Banner -->
-  <text x="40" y="46" fill="#f8fafc" font-size="24" font-weight="700" letter-spacing="0.5">FreightIQ — Maritime Freight Forecasting &amp; Chartering Optimization Architecture</text>
-  <text x="40" y="70" fill="#94a3b8" font-size="13">React 19 + TypeScript 6.0 (Vite 8) • FastAPI 0.115 + Pydantic v2 • SARIMAX Log-Space Kalman Engine • Berth-Level Resolver • SQLite WAL Cache</text>
+    <!-- Ambient Glow Highlights -->
+    <circle cx="150" cy="180" r="140" fill="#0284C7" opacity="0.08" filter="url(#glowCyan)"/>
+    <circle cx="680" cy="380" r="170" fill="#8B5CF6" opacity="0.07" filter="url(#glowPurple)"/>
+    <circle cx="1100" cy="580" r="150" fill="#10B981" opacity="0.06" filter="url(#glowEmerald)"/>
 
-  <!-- ==================== TIER 1: REACT 19 OPERATIONAL COMMAND DECK ==================== -->
-  <g filter="url(#dropShadow)">
-    <rect x="35" y="95" width="730" height="190" rx="12" fill="#1e293b" stroke="#0284c7" stroke-width="1.5"/>
-    <rect x="35" y="95" width="730" height="34" rx="12" fill="url(#uiHeader)"/>
-    <text x="55" y="117" fill="#ffffff" font-size="13" font-weight="700" letter-spacing="0.8">CLIENT TIER — REACT 19 + TYPESCRIPT 6.0 COMMAND DECK (PORT 5173)</text>
+    <!-- Canvas Frame -->
+    <rect width="1280" height="820" fill="url(#bgGradient)" rx="14"/>
+    <rect width="1280" height="820" fill="url(#dotGrid)" rx="14"/>
+    <rect x="6" y="6" width="1268" height="808" fill="none" stroke="#1E293B" stroke-width="1.5" rx="10"/>
 
-    <!-- Pages Group 1 -->
-    <rect x="52" y="142" width="165" height="62" rx="8" fill="#0f172a" stroke="#38bdf8" stroke-width="1"/>
-    <text x="134" y="162" fill="#e0f2fe" font-size="12" font-weight="600" text-anchor="middle">Command &amp; Geospatial</text>
-    <text x="134" y="178" fill="#94a3b8" font-size="10" text-anchor="middle">CommandCenter (/) • Map (/map)</text>
-    <text x="134" y="193" fill="#94a3b8" font-size="10" text-anchor="middle">React-Leaflet 5 • RiskAlerts</text>
+    <!-- Main Header Banner -->
+    <g transform="translate(36, 26)">
+      <text x="0" y="18" fill="#F8FAFC" font-size="20" font-weight="800" letter-spacing="0.4">SIH Freight Forecasting &#8212; Maritime Rate Projection &amp; Port Hydrography</text>
+      <text x="0" y="36" fill="#94A3B8" font-size="11.5">React 19 + TypeScript 6 + Leaflet | FastAPI REST | Two-Stage SARIMAX(1,1,1) + Physical Berth Cascade</text>
+      <!-- Badge Pill -->
+      <g transform="translate(1040, 2)">
+        <rect x="0" y="0" width="168" height="28" rx="14" fill="#0F172A" stroke="#38BDF8" stroke-width="1.2"/>
+        <circle cx="14" cy="14" r="3.5" fill="#22C55E"/>
+        <text x="25" y="17.5" fill="#38BDF8" font-size="10" font-weight="700" letter-spacing="0.6">v2.0 PRODUCTION</text>
+      </g>
+    </g>
 
-    <!-- Pages Group 2 -->
-    <rect x="229" y="142" width="165" height="62" rx="8" fill="#0f172a" stroke="#38bdf8" stroke-width="1"/>
-    <text x="311" y="162" fill="#e0f2fe" font-size="12" font-weight="600" text-anchor="middle">Forecasting &amp; Timing</text>
-    <text x="311" y="178" fill="#94a3b8" font-size="10" text-anchor="middle">Forecast (/forecast)</text>
-    <text x="311" y="193" fill="#94a3b8" font-size="10" text-anchor="middle">MarketTiming • Recharts 3.10</text>
-
-    <!-- Pages Group 3 -->
-    <rect x="406" y="142" width="165" height="62" rx="8" fill="#0f172a" stroke="#38bdf8" stroke-width="1"/>
-    <text x="488" y="162" fill="#e0f2fe" font-size="12" font-weight="600" text-anchor="middle">Berth &amp; Fleet Planning</text>
-    <text x="488" y="178" fill="#94a3b8" font-size="10" text-anchor="middle">Matcher (/matcher)</text>
-    <text x="488" y="193" fill="#94a3b8" font-size="10" text-anchor="middle">IdlePlanner • VoyageEditor</text>
-
-    <!-- Pages Group 4 -->
-    <rect x="583" y="142" width="165" height="62" rx="8" fill="#0f172a" stroke="#38bdf8" stroke-width="1"/>
-    <text x="665" y="162" fill="#e0f2fe" font-size="12" font-weight="600" text-anchor="middle">Spot vs CVC / PTC</text>
-    <text x="665" y="178" fill="#94a3b8" font-size="10" text-anchor="middle">ContractComparison (/contracts)</text>
-    <text x="665" y="193" fill="#94a3b8" font-size="10" text-anchor="middle">Evaluate (/evaluate) • cvcEngine</text>
-
-    <!-- Client Data & Fallback Layer -->
-    <rect x="52" y="216" width="696" height="54" rx="8" fill="#0f172a" stroke="#334155" stroke-width="1"/>
-    <text x="400" y="236" fill="#cbd5e1" font-size="11" font-weight="600" text-anchor="middle">Resilient Client Transport, State &amp; Offline Fallback Layer</text>
-    <text x="400" y="253" fill="#94a3b8" font-size="10" text-anchor="middle">src/lib/api.ts (8s AbortController) • useApiResource • DataStatusProvider • ConnectionBadge • DataOriginNotice • src/lib/fallbacks.ts</text>
-  </g>
-
-  <!-- ==================== TIER 2: FASTAPI ASYNC GATEWAY & ROUTERS ==================== -->
-  <g filter="url(#dropShadow)">
-    <rect x="35" y="320" width="730" height="150" rx="12" fill="#1e293b" stroke="#0d9488" stroke-width="1.5"/>
-    <rect x="35" y="320" width="730" height="34" rx="12" fill="url(#apiHeader)"/>
-    <text x="55" y="342" fill="#ffffff" font-size="13" font-weight="700" letter-spacing="0.8">BACKEND API TIER — FASTAPI 0.115 &amp; PYDANTIC V2 ROUTERS (PORT 8000)</text>
-
-    <rect x="52" y="366" width="222" height="90" rx="8" fill="#0f172a" stroke="#2dd4bf" stroke-width="1"/>
-    <text x="163" y="386" fill="#ccfbf1" font-size="12" font-weight="600" text-anchor="middle">Ports &amp; Berth Match</text>
-    <text x="163" y="403" fill="#cbd5e1" font-size="10" text-anchor="middle">GET /api/ports</text>
-    <text x="163" y="418" fill="#cbd5e1" font-size="10" text-anchor="middle">GET /api/ports/{port}/berths</text>
-    <text x="163" y="433" fill="#cbd5e1" font-size="10" text-anchor="middle">GET /api/ports/catalog</text>
-    <text x="163" y="448" fill="#cbd5e1" font-size="10" text-anchor="middle">POST /api/match</text>
-
-    <rect x="289" y="366" width="222" height="90" rx="8" fill="#0f172a" stroke="#2dd4bf" stroke-width="1"/>
-    <text x="400" y="386" fill="#ccfbf1" font-size="12" font-weight="600" text-anchor="middle">Forecasting &amp; Chartering</text>
-    <text x="400" y="403" fill="#cbd5e1" font-size="10" text-anchor="middle">POST /api/forecast</text>
-    <text x="400" y="418" fill="#cbd5e1" font-size="10" text-anchor="middle">POST /api/contract</text>
-    <text x="400" y="433" fill="#cbd5e1" font-size="10" text-anchor="middle">POST /api/contract/multiport</text>
-    <text x="400" y="448" fill="#cbd5e1" font-size="10" text-anchor="middle">POST /api/evaluate</text>
-
-    <rect x="526" y="366" width="222" height="90" rx="8" fill="#0f172a" stroke="#2dd4bf" stroke-width="1"/>
-    <text x="637" y="386" fill="#ccfbf1" font-size="12" font-weight="600" text-anchor="middle">Telemetry, Series &amp; Health</text>
-    <text x="637" y="403" fill="#cbd5e1" font-size="10" text-anchor="middle">GET /api/series &amp; /api/series/metrics</text>
-    <text x="637" y="418" fill="#cbd5e1" font-size="10" text-anchor="middle">GET /api/data/status</text>
-    <text x="637" y="433" fill="#cbd5e1" font-size="10" text-anchor="middle">POST /api/data/refresh</text>
-    <text x="637" y="448" fill="#cbd5e1" font-size="10" text-anchor="middle">GET /api/health</text>
-  </g>
-
-  <!-- ==================== TIER 3: QUANTITATIVE ML, COSTING & BERTH RESOLVER ==================== -->
-  <g filter="url(#dropShadow)">
-    <rect x="35" y="505" width="730" height="235" rx="12" fill="#1e293b" stroke="#7c3aed" stroke-width="1.5"/>
-    <rect x="35" y="505" width="730" height="34" rx="12" fill="url(#mlHeader)"/>
-    <text x="55" y="527" fill="#ffffff" font-size="13" font-weight="700" letter-spacing="0.8">QUANTITATIVE FORECASTING, COSTING &amp; BERTH RESOLUTION ENGINES</text>
-
-    <!-- SARIMAX Engine -->
-    <rect x="52" y="552" width="222" height="172" rx="8" fill="#0f172a" stroke="#a78bfa" stroke-width="1"/>
-    <text x="163" y="572" fill="#ede9fe" font-size="12" font-weight="700" text-anchor="middle">SARIMAX Projection Engine</text>
-    <text x="163" y="589" fill="#cbd5e1" font-size="10" text-anchor="middle">backend/models/project.py</text>
-    <text x="163" y="607" fill="#94a3b8" font-size="10" text-anchor="middle">• Log-space SARIMAX(1,1,1) + Exog</text>
-    <text x="163" y="623" fill="#94a3b8" font-size="10" text-anchor="middle">• Kalman Filter apply(refit=False)</text>
-    <text x="163" y="639" fill="#94a3b8" font-size="10" text-anchor="middle">• OWN_DRIVER Circularity Guard</text>
-    <text x="163" y="655" fill="#94a3b8" font-size="10" text-anchor="middle">• Fourier Seasonality + Monsoon Step</text>
-    <text x="163" y="671" fill="#94a3b8" font-size="10" text-anchor="middle">• p80 / p95 Asymmetric Intervals</text>
-    <text x="163" y="687" fill="#94a3b8" font-size="10" text-anchor="middle">• Rolling-Origin 4-Fold Backtest</text>
-    <text x="163" y="703" fill="#94a3b8" font-size="10" text-anchor="middle">• L-BFGS + Nelder-Mead Warm Start</text>
-
-    <!-- Berth & Lighterage Resolver -->
-    <rect x="289" y="552" width="222" height="172" rx="8" fill="#0f172a" stroke="#a78bfa" stroke-width="1"/>
-    <text x="400" y="572" fill="#ede9fe" font-size="12" font-weight="700" text-anchor="middle">Berth &amp; Lighterage Resolver</text>
-    <text x="400" y="589" fill="#cbd5e1" font-size="10" text-anchor="middle">backend/data/ports/resolver.py</text>
-    <text x="400" y="607" fill="#94a3b8" font-size="10" text-anchor="middle">• Three-Valued Verdict:</text>
-    <text x="400" y="623" fill="#6ee7b7" font-size="10" text-anchor="middle">  ACCEPT_ALL_TIDE / HIGH_TIDE / REJECT</text>
-    <text x="400" y="639" fill="#94a3b8" font-size="10" text-anchor="middle">• UKC Margin (0.4m) &amp; Comfort Bands</text>
-    <text x="400" y="655" fill="#94a3b8" font-size="10" text-anchor="middle">• Immersion: TONNES_PER_CM (38–108)</text>
-    <text x="400" y="671" fill="#94a3b8" font-size="10" text-anchor="middle">• Sandheads / Sagar Barge Lighterage</text>
-    <text x="400" y="687" fill="#94a3b8" font-size="10" text-anchor="middle">• Vizag Outer vs Inner Basin Split</text>
-    <text x="400" y="703" fill="#94a3b8" font-size="10" text-anchor="middle">• Per-Berth Provenance URL &amp; Date</text>
-
-    <!-- Voyage Costing & CVC/PTC Arbiter -->
-    <rect x="526" y="552" width="222" height="172" rx="8" fill="#0f172a" stroke="#a78bfa" stroke-width="1"/>
-    <text x="637" y="572" fill="#ede9fe" font-size="12" font-weight="700" text-anchor="middle">Voyage Costing &amp; CVC Engine</text>
-    <text x="637" y="589" fill="#cbd5e1" font-size="10" text-anchor="middle">backend/app/costing.py</text>
-    <text x="637" y="607" fill="#94a3b8" font-size="10" text-anchor="middle">• Spot vs CVC vs Period TC (PTC)</text>
-    <text x="637" y="623" fill="#94a3b8" font-size="10" text-anchor="middle">• BAF Hedge (0.7) &amp; Wait Reduction</text>
-    <text x="637" y="639" fill="#94a3b8" font-size="10" text-anchor="middle">• Correlated Error Band (rho=0.7)</text>
-    <text x="637" y="655" fill="#94a3b8" font-size="10" text-anchor="middle">• Break-Even USD/t &amp; Normal CDF</text>
-    <text x="637" y="671" fill="#94a3b8" font-size="10" text-anchor="middle">• Multi-Port Split Cargo Optimiser</text>
-    <text x="637" y="687" fill="#94a3b8" font-size="10" text-anchor="middle">• Quantile GBR Pipeline (engine/)</text>
-    <text x="637" y="703" fill="#94a3b8" font-size="10" text-anchor="middle">• INR Crore &amp; USD Dual Accounting</text>
-  </g>
-
-  <!-- ==================== TIER 4: EXTERNAL MARKET ADAPTERS (TOP RIGHT) ==================== -->
-  <g filter="url(#dropShadow)">
-    <rect x="805" y="95" width="360" height="310" rx="12" fill="#1e293b" stroke="#db2777" stroke-width="1.5"/>
-    <rect x="805" y="95" width="360" height="34" rx="12" fill="url(#adapterHeader)"/>
-    <text x="825" y="117" fill="#ffffff" font-size="13" font-weight="700" letter-spacing="0.8">INGESTION ADAPTERS &amp; EXTERNAL FEEDS</text>
-
-    <rect x="822" y="142" width="326" height="50" rx="8" fill="#0f172a" stroke="#f472b6" stroke-width="1"/>
-    <text x="985" y="162" fill="#fce7f3" font-size="11" font-weight="600" text-anchor="middle">Baltic &amp; Dry-Bulk Equity Proxies</text>
-    <text x="985" y="179" fill="#94a3b8" font-size="10" text-anchor="middle">TradingEconomics (BDIY:IND) • Yahoo Finance (GOGL, SBLK)</text>
-
-    <rect x="822" y="200" width="326" height="50" rx="8" fill="#0f172a" stroke="#f472b6" stroke-width="1"/>
-    <text x="985" y="220" fill="#fce7f3" font-size="11" font-weight="600" text-anchor="middle">Commodity Futures &amp; FRED Macro</text>
-    <text x="985" y="237" fill="#94a3b8" font-size="10" text-anchor="middle">Coal (MTF=F / PCOALAUUSDM) • Iron Ore (TIO=F) • DEXINUS / DEXUSAL</text>
-
-    <rect x="822" y="258" width="326" height="50" rx="8" fill="#0f172a" stroke="#f472b6" stroke-width="1"/>
-    <text x="985" y="278" fill="#fce7f3" font-size="11" font-weight="600" text-anchor="middle">Weather, Bunker, Congestion &amp; AIS</text>
-    <text x="985" y="295" fill="#94a3b8" font-size="10" text-anchor="middle">Open-Meteo Marine • bunker_vlsfo.csv • congestion.json • AIS</text>
-
-    <rect x="822" y="316" width="326" height="74" rx="8" fill="#0f172a" stroke="#34d399" stroke-width="1"/>
-    <text x="985" y="336" fill="#a7f3d0" font-size="11" font-weight="700" text-anchor="middle">APScheduler &amp; Failure-Isolated Ingestion</text>
-    <text x="985" y="353" fill="#cbd5e1" font-size="10" text-anchor="middle">Hourly ingest.refresh_all() • SourceAdapter.safe_fetch()</text>
-    <text x="985" y="369" fill="#94a3b8" font-size="10" text-anchor="middle">Zero network calls on request path • Proxy &amp; Staleness Tagging</text>
-  </g>
-
-  <!-- ==================== TIER 5: SQLITE WAL CACHE & REFERENCE ARTIFACTS (BOTTOM RIGHT) ==================== -->
-  <g filter="url(#dropShadow)">
-    <rect x="805" y="435" width="360" height="305" rx="12" fill="#1e293b" stroke="#d97706" stroke-width="1.5"/>
-    <rect x="805" y="435" width="360" height="34" rx="12" fill="url(#storageHeader)"/>
-    <text x="825" y="457" fill="#ffffff" font-size="13" font-weight="700" letter-spacing="0.8">STORAGE, SNAPSHOT &amp; MODEL ARTIFACTS</text>
-
-    <rect x="822" y="482" width="326" height="68" rx="8" fill="#0f172a" stroke="#fbbf24" stroke-width="1"/>
-    <text x="985" y="502" fill="#fef3c7" font-size="12" font-weight="600" text-anchor="middle">SQLite WAL Cache (backend/data/cache.db)</text>
-    <text x="985" y="519" fill="#cbd5e1" font-size="10" text-anchor="middle">Table: observations (metric, timestamp PK, value, source)</text>
-    <text x="985" y="535" fill="#cbd5e1" font-size="10" text-anchor="middle">Table: source_status (is_stale, is_proxy, row_count, error)</text>
-
-    <rect x="822" y="562" width="326" height="62" rx="8" fill="#0f172a" stroke="#fbbf24" stroke-width="1"/>
-    <text x="985" y="582" fill="#fef3c7" font-size="12" font-weight="600" text-anchor="middle">Committed Offline Snapshot &amp; Port Tables</text>
-    <text x="985" y="599" fill="#cbd5e1" font-size="10" text-anchor="middle">data/snapshot.json (Cold-Boot Seed) • PROVENANCE.md</text>
-    <text x="985" y="614" fill="#94a3b8" font-size="10" text-anchor="middle">data/ports/berths.csv • data/ports/lighterage_nodes.csv</text>
-
-    <rect x="822" y="636" width="326" height="86" rx="8" fill="#0f172a" stroke="#fbbf24" stroke-width="1"/>
-    <text x="985" y="656" fill="#fef3c7" font-size="12" font-weight="600" text-anchor="middle">Trained Model Pickles &amp; Historical Parquet</text>
-    <text x="985" y="673" fill="#cbd5e1" font-size="10" text-anchor="middle">models/sarimax_{handysize,supramax,panamax,capesize}.pkl</text>
-    <text x="985" y="689" fill="#cbd5e1" font-size="10" text-anchor="middle">models/metrics.json (Rolling Backtest MAPE &amp; RMSE)</text>
-    <text x="985" y="705" fill="#94a3b8" font-size="10" text-anchor="middle">data/historical/*.parquet &amp; p10/p50/p90 .joblib Quantile Models</text>
-  </g>
-
-  <!-- ==================== DATA FLOW ARROWS ==================== -->
-  <!-- Client to FastAPI -->
-  <line x1="250" y1="285" x2="250" y2="318" stroke="#38bdf8" stroke-width="2.5" marker-end="url(#arrowBlue)"/>
-  <text x="125" y="306" fill="#7dd3fc" font-size="10" font-weight="600">REST JSON (GET/POST)</text>
-
-  <line x1="550" y1="320" x2="550" y2="287" stroke="#34d399" stroke-width="2.5" marker-end="url(#arrowGreen)"/>
-  <text x="562" y="306" fill="#6ee7b7" font-size="10" font-weight="600">Typed DTO + Freshness Metadata</text>
-
-  <!-- FastAPI to Quantitative Engine -->
-  <line x1="163" y1="470" x2="400" y2="503" stroke="#a78bfa" stroke-width="2" marker-end="url(#arrowViolet)"/>
-  <line x1="400" y1="470" x2="163" y2="503" stroke="#a78bfa" stroke-width="2" marker-end="url(#arrowViolet)"/>
-  <line x1="400" y1="470" x2="637" y2="503" stroke="#a78bfa" stroke-width="2" marker-end="url(#arrowViolet)"/>
-
-  <!-- Adapters to SQLite Cache -->
-  <line x1="985" y1="405" x2="985" y2="433" stroke="#f472b6" stroke-width="2.5" marker-end="url(#arrowPink)"/>
-  <text x="1000" y="423" fill="#f9a8d4" font-size="10" font-weight="600">Upsert Observations</text>
-
-  <!-- Cache/Artifacts to FastAPI & Engine -->
-  <path d="M 805 516 L 780 516 L 780 415 L 767 415" fill="none" stroke="#fbbf24" stroke-width="2" marker-end="url(#arrowAmber)"/>
-  <path d="M 805 595 L 767 595" fill="none" stroke="#fbbf24" stroke-width="2" marker-end="url(#arrowAmber)"/>
-  <text x="769" y="583" fill="#fde68a" font-size="9">Read-Only</text>
-
-  <!-- ==================== VISUAL LEGEND ==================== -->
-  <g filter="url(#dropShadow)">
-    <rect x="35" y="760" width="1130" height="75" rx="10" fill="#0f172a" stroke="#334155" stroke-width="1.5"/>
-    <text x="55" y="783" fill="#f8fafc" font-size="12" font-weight="700" letter-spacing="0.6">ARCHITECTURE LEGEND &amp; SYSTEM BOUNDARIES</text>
-
-    <rect x="55" y="798" width="16" height="16" rx="4" fill="url(#uiHeader)"/>
-    <text x="78" y="810" fill="#cbd5e1" font-size="11">React 19 Command Deck (Vite 8)</text>
-
-    <rect x="285" y="798" width="16" height="16" rx="4" fill="url(#apiHeader)"/>
-    <text x="308" y="810" fill="#cbd5e1" font-size="11">FastAPI Gateway &amp; Routers</text>
-
-    <rect x="490" y="798" width="16" height="16" rx="4" fill="url(#mlHeader)"/>
-    <text x="513" y="810" fill="#cbd5e1" font-size="11">SARIMAX, Berth &amp; CVC Engines</text>
-
-    <rect x="715" y="798" width="16" height="16" rx="4" fill="url(#adapterHeader)"/>
-    <text x="738" y="810" fill="#cbd5e1" font-size="11">Market &amp; Weather Adapters</text>
-
-    <rect x="925" y="798" width="16" height="16" rx="4" fill="url(#storageHeader)"/>
-    <text x="948" y="810" fill="#cbd5e1" font-size="11">SQLite WAL Cache &amp; Pickles</text>
-  </g>
+    <!-- Tier: TIER 1 &#183; CLIENT PRESENTATION &amp; MARITIME UI -->
+    <rect x="36" y="76" width="1208" height="154" rx="12" fill="url(#tierGradCyan)" stroke="#0284C7" stroke-opacity="0.35" stroke-width="1.2"/>
+    <rect x="52" y="86" width="301.59999999999997" height="18" rx="9" fill="#0F172A" stroke="#0284C7" stroke-width="1"/>
+    <text x="60" y="98.5" fill="#0284C7" font-size="10" font-weight="700" letter-spacing="0.8">TIER 1 &#183; CLIENT PRESENTATION &amp; MARITIME UI</text>
+    <text x="1228" y="98.5" fill="#64748B" font-size="10" font-weight="600" text-anchor="end">REACT 19 / VITE 8 / LEAFLET</text>
+    <!-- Tier: TIER 2 &#183; API GATEWAY &amp; VOYAGE RESOLUTION -->
+    <rect x="36" y="250" width="1208" height="154" rx="12" fill="url(#tierGradIndigo)" stroke="#6366F1" stroke-opacity="0.35" stroke-width="1.2"/>
+    <rect x="52" y="260" width="288.0" height="18" rx="9" fill="#0F172A" stroke="#6366F1" stroke-width="1"/>
+    <text x="60" y="272.5" fill="#6366F1" font-size="10" font-weight="700" letter-spacing="0.8">TIER 2 &#183; API GATEWAY &amp; VOYAGE RESOLUTION</text>
+    <text x="1228" y="272.5" fill="#64748B" font-size="10" font-weight="600" text-anchor="end">PORT 8000 / FASTAPI REST</text>
+    <!-- Tier: TIER 3 &#183; ECONOMETRIC &amp; PHYSICAL BERTH ENGINES -->
+    <rect x="36" y="424" width="1208" height="154" rx="12" fill="url(#tierGradEmerald)" stroke="#10B981" stroke-opacity="0.35" stroke-width="1.2"/>
+    <rect x="52" y="434" width="322.0" height="18" rx="9" fill="#0F172A" stroke="#10B981" stroke-width="1"/>
+    <text x="60" y="446.5" fill="#10B981" font-size="10" font-weight="700" letter-spacing="0.8">TIER 3 &#183; ECONOMETRIC &amp; PHYSICAL BERTH ENGINES</text>
+    <text x="1228" y="446.5" fill="#64748B" font-size="10" font-weight="600" text-anchor="end">SARIMAX / HYDROGRAPHY</text>
+    <!-- Tier: TIER 4 &#183; HYDROGRAPHIC DATA, TIME-SERIES &amp; FEEDS -->
+    <rect x="36" y="598" width="1208" height="154" rx="12" fill="url(#tierGradAmber)" stroke="#F59E0B" stroke-opacity="0.35" stroke-width="1.2"/>
+    <rect x="52" y="608" width="335.59999999999997" height="18" rx="9" fill="#0F172A" stroke="#F59E0B" stroke-width="1"/>
+    <text x="60" y="620.5" fill="#F59E0B" font-size="10" font-weight="700" letter-spacing="0.8">TIER 4 &#183; HYDROGRAPHIC DATA, TIME-SERIES &amp; FEEDS</text>
+    <text x="1228" y="620.5" fill="#64748B" font-size="10" font-weight="600" text-anchor="end">BERTHS.CSV / MARKET FEEDS</text>
+    <!-- Node Card: React 19 Maritime SPA -->
+    <g filter="url(#dropShadow)">
+      <rect x="52" y="108" width="376" height="108" rx="10" fill="url(#cardGradDark)" stroke="#1E293B" stroke-width="1.2"/>
+      <!-- Top Accent Bar -->
+      <path d="M 54 108 L 426 108" stroke="#38BDF8" stroke-width="2.5" stroke-linecap="round"/>
+      <!-- Icon Container -->
+      <rect x="64" y="120" width="28" height="28" rx="6" fill="#0B132B" stroke="#38BDF8" stroke-opacity="0.3" stroke-width="1"/>
+      <g transform="translate(68, 124)">
+        <g transform="translate(0, 0)">
+          <rect x="1" y="2" width="18" height="15" rx="3" fill="none" stroke="#38BDF8" stroke-width="1.6"/>
+          <line x1="1" y1="6" x2="19" y2="6" stroke="#38BDF8" stroke-width="1.4"/>
+          <circle cx="4" cy="4" r="0.9" fill="#38BDF8"/>
+          <circle cx="7" cy="4" r="0.9" fill="#38BDF8"/>
+        </g>
+      </g>
+      <!-- Title & Subtitle Badge -->
+      <text x="100" y="132" fill="#F8FAFC" font-size="12.5" font-weight="700">React 19 Maritime SPA</text>
+      <rect x="100" y="137" width="146.4" height="14" rx="3" fill="#1E293B"/>
+      <text x="105" y="147.5" fill="#38BDF8" font-size="9" font-weight="600" letter-spacing="0.3">UI &#183; VITE 8 + TAILWIND</text>
+      
+      <circle cx="68" cy="159" r="2" fill="#38BDF8"/>
+      <text x="77" y="162" fill="#CBD5E1" font-size="10.5">App.tsx, ForecastForm, ContractAdvisor</text>
+      <circle cx="68" cy="177" r="2" fill="#38BDF8"/>
+      <text x="77" y="180" fill="#CBD5E1" font-size="10.5">MacroStrip macroeconomic trend visualizer</text>
+      <circle cx="68" cy="195" r="2" fill="#38BDF8"/>
+      <text x="77" y="198" fill="#CBD5E1" font-size="10.5">Responsive route evaluator &amp; parcel calculator</text>
+    </g>
+    <!-- Node Card: Interactive Port &amp; Berth Map -->
+    <g filter="url(#dropShadow)">
+      <rect x="452" y="108" width="376" height="108" rx="10" fill="url(#cardGradDark)" stroke="#1E293B" stroke-width="1.2"/>
+      <!-- Top Accent Bar -->
+      <path d="M 454 108 L 826 108" stroke="#38BDF8" stroke-width="2.5" stroke-linecap="round"/>
+      <!-- Icon Container -->
+      <rect x="464" y="120" width="28" height="28" rx="6" fill="#0B132B" stroke="#38BDF8" stroke-opacity="0.3" stroke-width="1"/>
+      <g transform="translate(468, 124)">
+        <g transform="translate(0, 0)">
+          <path d="M 2 10 C 4.5 5.5 15.5 5.5 18 10 C 15.5 14.5 4.5 14.5 2 10 Z" fill="none" stroke="#38BDF8" stroke-width="1.6"/>
+          <circle cx="10" cy="10" r="3" fill="none" stroke="#38BDF8" stroke-width="1.5"/>
+          <circle cx="10" cy="10" r="1.2" fill="#38BDF8"/>
+        </g>
+      </g>
+      <!-- Title & Subtitle Badge -->
+      <text x="500" y="132" fill="#F8FAFC" font-size="12.5" font-weight="700">Interactive Port &amp; Berth Map</text>
+      <rect x="500" y="137" width="140.20000000000002" height="14" rx="3" fill="#1E293B"/>
+      <text x="505" y="147.5" fill="#38BDF8" font-size="9" font-weight="600" letter-spacing="0.3">GEO &#183; LEAFLET + CARTO</text>
+      
+      <circle cx="468" cy="159" r="2" fill="#38BDF8"/>
+      <text x="477" y="162" fill="#CBD5E1" font-size="10.5">PortMap.tsx displaying Indian ports &amp; berths</text>
+      <circle cx="468" cy="177" r="2" fill="#38BDF8"/>
+      <text x="477" y="180" fill="#CBD5E1" font-size="10.5">Voyage routes, lighterage transfer nodes</text>
+      <circle cx="468" cy="195" r="2" fill="#38BDF8"/>
+      <text x="477" y="198" fill="#CBD5E1" font-size="10.5">Vessel draft vs depth bathymetric indicators</text>
+    </g>
+    <!-- Node Card: Multi-Port Stem Planner -->
+    <g filter="url(#dropShadow)">
+      <rect x="852" y="108" width="376" height="108" rx="10" fill="url(#cardGradDark)" stroke="#1E293B" stroke-width="1.2"/>
+      <!-- Top Accent Bar -->
+      <path d="M 854 108 L 1226 108" stroke="#38BDF8" stroke-width="2.5" stroke-linecap="round"/>
+      <!-- Icon Container -->
+      <rect x="864" y="120" width="28" height="28" rx="6" fill="#0B132B" stroke="#38BDF8" stroke-opacity="0.3" stroke-width="1"/>
+      <g transform="translate(868, 124)">
+        <g transform="translate(0, 0)">
+          <rect x="2" y="2" width="16" height="16" rx="2" fill="none" stroke="#38BDF8" stroke-width="1.4"/>
+          <line x1="6" y1="14" x2="6" y2="10" stroke="#38BDF8" stroke-width="2" stroke-linecap="round"/>
+          <line x1="10" y1="14" x2="10" y2="6" stroke="#38BDF8" stroke-width="2" stroke-linecap="round"/>
+          <line x1="14" y1="14" x2="14" y2="8" stroke="#38BDF8" stroke-width="2" stroke-linecap="round"/>
+        </g>
+      </g>
+      <!-- Title & Subtitle Badge -->
+      <text x="900" y="132" fill="#F8FAFC" font-size="12.5" font-weight="700">Multi-Port Stem Planner</text>
+      <rect x="900" y="137" width="158.8" height="14" rx="3" fill="#1E293B"/>
+      <text x="905" y="147.5" fill="#38BDF8" font-size="9" font-weight="600" letter-spacing="0.3">PLANNING &#183; MULTIPORTPLAN</text>
+      
+      <circle cx="868" cy="159" r="2" fill="#38BDF8"/>
+      <text x="877" y="162" fill="#CBD5E1" font-size="10.5">Multi-port split optimizer interface</text>
+      <circle cx="868" cy="177" r="2" fill="#38BDF8"/>
+      <text x="877" y="180" fill="#CBD5E1" font-size="10.5">Parcel allocation across discharge ports</text>
+      <circle cx="868" cy="195" r="2" fill="#38BDF8"/>
+      <text x="877" y="198" fill="#CBD5E1" font-size="10.5">Demurrage vs deadfreight cost trade-off UI</text>
+    </g>
+    <!-- Node Card: FastAPI REST Gateway -->
+    <g filter="url(#dropShadow)">
+      <rect x="52" y="282" width="376" height="108" rx="10" fill="url(#cardGradDark)" stroke="#1E293B" stroke-width="1.2"/>
+      <!-- Top Accent Bar -->
+      <path d="M 54 282 L 426 282" stroke="#818CF8" stroke-width="2.5" stroke-linecap="round"/>
+      <!-- Icon Container -->
+      <rect x="64" y="294" width="28" height="28" rx="6" fill="#0B132B" stroke="#818CF8" stroke-opacity="0.3" stroke-width="1"/>
+      <g transform="translate(68, 298)">
+        <g transform="translate(0, 0)">
+          <rect x="2" y="3" width="16" height="5" rx="1.5" fill="none" stroke="#818CF8" stroke-width="1.5"/>
+          <rect x="2" y="12" width="16" height="5" rx="1.5" fill="none" stroke="#818CF8" stroke-width="1.5"/>
+          <circle cx="5" cy="5.5" r="1" fill="#818CF8"/>
+          <circle cx="5" cy="14.5" r="1" fill="#818CF8"/>
+          <line x1="13" y1="8" x2="13" y2="12" stroke="#818CF8" stroke-width="1.4"/>
+        </g>
+      </g>
+      <!-- Title & Subtitle Badge -->
+      <text x="100" y="306" fill="#F8FAFC" font-size="12.5" font-weight="700">FastAPI REST Gateway</text>
+      <rect x="100" y="311" width="115.4" height="14" rx="3" fill="#1E293B"/>
+      <text x="105" y="321.5" fill="#818CF8" font-size="9" font-weight="600" letter-spacing="0.3">GATEWAY &#183; MAIN.PY</text>
+      
+      <circle cx="68" cy="333" r="2" fill="#818CF8"/>
+      <text x="77" y="336" fill="#CBD5E1" font-size="10.5">13 validated endpoints with Pydantic v2</text>
+      <circle cx="68" cy="351" r="2" fill="#818CF8"/>
+      <text x="77" y="354" fill="#CBD5E1" font-size="10.5">CORS middleware with sub-5ms routing</text>
+      <circle cx="68" cy="369" r="2" fill="#818CF8"/>
+      <text x="77" y="372" fill="#CBD5E1" font-size="10.5">Asynchronous non-blocking route evaluations</text>
+    </g>
+    <!-- Node Card: Vessel Parameter Matcher -->
+    <g filter="url(#dropShadow)">
+      <rect x="452" y="282" width="376" height="108" rx="10" fill="url(#cardGradDark)" stroke="#1E293B" stroke-width="1.2"/>
+      <!-- Top Accent Bar -->
+      <path d="M 454 282 L 826 282" stroke="#818CF8" stroke-width="2.5" stroke-linecap="round"/>
+      <!-- Icon Container -->
+      <rect x="464" y="294" width="28" height="28" rx="6" fill="#0B132B" stroke="#818CF8" stroke-opacity="0.3" stroke-width="1"/>
+      <g transform="translate(468, 298)">
+        <g transform="translate(0, 0)">
+          <rect x="2" y="3" width="16" height="5" rx="1.5" fill="none" stroke="#818CF8" stroke-width="1.5"/>
+          <rect x="2" y="12" width="16" height="5" rx="1.5" fill="none" stroke="#818CF8" stroke-width="1.5"/>
+          <circle cx="5" cy="5.5" r="1" fill="#818CF8"/>
+          <circle cx="5" cy="14.5" r="1" fill="#818CF8"/>
+          <line x1="13" y1="8" x2="13" y2="12" stroke="#818CF8" stroke-width="1.4"/>
+        </g>
+      </g>
+      <!-- Title & Subtitle Badge -->
+      <text x="500" y="306" fill="#F8FAFC" font-size="12.5" font-weight="700">Vessel Parameter Matcher</text>
+      <rect x="500" y="311" width="127.8" height="14" rx="3" fill="#1E293B"/>
+      <text x="505" y="321.5" fill="#818CF8" font-size="9" font-weight="600" letter-spacing="0.3">PARSER &#183; /API/MATCH</text>
+      
+      <circle cx="468" cy="333" r="2" fill="#818CF8"/>
+      <text x="477" y="336" fill="#CBD5E1" font-size="10.5">Vessel classes: Capesize, Panamax, Supramax</text>
+      <circle cx="468" cy="351" r="2" fill="#818CF8"/>
+      <text x="477" y="354" fill="#CBD5E1" font-size="10.5">Cargo deadweight &amp; draft parameter parsing</text>
+      <circle cx="468" cy="369" r="2" fill="#818CF8"/>
+      <text x="477" y="372" fill="#CBD5E1" font-size="10.5">Route compatibility &amp; canal transit constraints</text>
+    </g>
+    <!-- Node Card: Market Cache &amp; Session State -->
+    <g filter="url(#dropShadow)">
+      <rect x="852" y="282" width="376" height="108" rx="10" fill="url(#cardGradDark)" stroke="#1E293B" stroke-width="1.2"/>
+      <!-- Top Accent Bar -->
+      <path d="M 854 282 L 1226 282" stroke="#818CF8" stroke-width="2.5" stroke-linecap="round"/>
+      <!-- Icon Container -->
+      <rect x="864" y="294" width="28" height="28" rx="6" fill="#0B132B" stroke="#818CF8" stroke-opacity="0.3" stroke-width="1"/>
+      <g transform="translate(868, 298)">
+        <g transform="translate(0, 0)">
+          <rect x="2" y="2" width="16" height="16" rx="2" fill="none" stroke="#818CF8" stroke-width="1.4"/>
+          <line x1="6" y1="14" x2="6" y2="10" stroke="#818CF8" stroke-width="2" stroke-linecap="round"/>
+          <line x1="10" y1="14" x2="10" y2="6" stroke="#818CF8" stroke-width="2" stroke-linecap="round"/>
+          <line x1="14" y1="14" x2="14" y2="8" stroke="#818CF8" stroke-width="2" stroke-linecap="round"/>
+        </g>
+      </g>
+      <!-- Title & Subtitle Badge -->
+      <text x="900" y="306" fill="#F8FAFC" font-size="12.5" font-weight="700">Market Cache &amp; Session State</text>
+      <rect x="900" y="311" width="171.20000000000002" height="14" rx="3" fill="#1E293B"/>
+      <text x="905" y="321.5" fill="#818CF8" font-size="9" font-weight="600" letter-spacing="0.3">STATE &#183; IN-MEMORY SNAPSHOT</text>
+      
+      <circle cx="868" cy="333" r="2" fill="#818CF8"/>
+      <text x="877" y="336" fill="#CBD5E1" font-size="10.5">Cached historical freight rate series</text>
+      <circle cx="868" cy="351" r="2" fill="#818CF8"/>
+      <text x="877" y="354" fill="#CBD5E1" font-size="10.5">Deduplicated econometric query results</text>
+      <circle cx="868" cy="369" r="2" fill="#818CF8"/>
+      <text x="877" y="372" fill="#CBD5E1" font-size="10.5">Live macroeconomic driver state buffer</text>
+    </g>
+    <!-- Node Card: Two-Stage SARIMAX(1,1,1) -->
+    <g filter="url(#dropShadow)">
+      <rect x="52" y="456" width="376" height="108" rx="10" fill="url(#cardGradDark)" stroke="#1E293B" stroke-width="1.2"/>
+      <!-- Top Accent Bar -->
+      <path d="M 54 456 L 426 456" stroke="#34D399" stroke-width="2.5" stroke-linecap="round"/>
+      <!-- Icon Container -->
+      <rect x="64" y="468" width="28" height="28" rx="6" fill="#0B132B" stroke="#34D399" stroke-opacity="0.3" stroke-width="1"/>
+      <g transform="translate(68, 472)">
+        <g transform="translate(0, 0)">
+          <circle cx="10" cy="10" r="4.5" fill="none" stroke="#34D399" stroke-width="1.6"/>
+          <path d="M 10 2 L 10 5.5 M 10 14.5 L 10 18 M 2 10 L 5.5 10 M 14.5 10 L 18 10" stroke="#34D399" stroke-width="1.5" stroke-linecap="round"/>
+          <circle cx="10" cy="10" r="1.5" fill="#34D399"/>
+        </g>
+      </g>
+      <!-- Title & Subtitle Badge -->
+      <text x="100" y="480" fill="#F8FAFC" font-size="12.5" font-weight="700">Two-Stage SARIMAX(1,1,1)</text>
+      <rect x="100" y="485" width="183.6" height="14" rx="3" fill="#1E293B"/>
+      <text x="105" y="495.5" fill="#34D399" font-size="9" font-weight="600" letter-spacing="0.3">ECONOMETRIC &#183; LOG-RATE MODEL</text>
+      
+      <circle cx="68" cy="507" r="2" fill="#34D399"/>
+      <text x="77" y="510" fill="#CBD5E1" font-size="10.5">Models log(rate) with z-scored exogenous drivers</text>
+      <circle cx="68" cy="525" r="2" fill="#34D399"/>
+      <text x="77" y="528" fill="#CBD5E1" font-size="10.5">Brent crude, USD/INR FX &amp; Fleet supply metrics</text>
+      <circle cx="68" cy="543" r="2" fill="#34D399"/>
+      <text x="77" y="546" fill="#CBD5E1" font-size="10.5">OWN_DRIVER circularity guard &amp; Nelder-Mead fallback</text>
+    </g>
+    <!-- Node Card: Hydrographic Berth Resolver -->
+    <g filter="url(#dropShadow)">
+      <rect x="452" y="456" width="376" height="108" rx="10" fill="url(#cardGradDark)" stroke="#1E293B" stroke-width="1.2"/>
+      <!-- Top Accent Bar -->
+      <path d="M 454 456 L 826 456" stroke="#34D399" stroke-width="2.5" stroke-linecap="round"/>
+      <!-- Icon Container -->
+      <rect x="464" y="468" width="28" height="28" rx="6" fill="#0B132B" stroke="#34D399" stroke-opacity="0.3" stroke-width="1"/>
+      <g transform="translate(468, 472)">
+        <g transform="translate(0, 0)">
+          <rect x="2" y="2" width="16" height="16" rx="2" fill="none" stroke="#34D399" stroke-width="1.4"/>
+          <line x1="6" y1="14" x2="6" y2="10" stroke="#34D399" stroke-width="2" stroke-linecap="round"/>
+          <line x1="10" y1="14" x2="10" y2="6" stroke="#34D399" stroke-width="2" stroke-linecap="round"/>
+          <line x1="14" y1="14" x2="14" y2="8" stroke="#34D399" stroke-width="2" stroke-linecap="round"/>
+        </g>
+      </g>
+      <!-- Title & Subtitle Badge -->
+      <text x="500" y="480" fill="#F8FAFC" font-size="12.5" font-weight="700">Hydrographic Berth Resolver</text>
+      <rect x="500" y="485" width="146.4" height="14" rx="3" fill="#1E293B"/>
+      <text x="505" y="495.5" fill="#34D399" font-size="9" font-weight="600" letter-spacing="0.3">PHYSICAL &#183; RESOLVER.PY</text>
+      
+      <circle cx="468" cy="507" r="2" fill="#34D399"/>
+      <text x="477" y="510" fill="#CBD5E1" font-size="10.5">5-step berth draft feasibility cascade</text>
+      <circle cx="468" cy="525" r="2" fill="#34D399"/>
+      <text x="477" y="528" fill="#CBD5E1" font-size="10.5">Tidal window checks: High Tide vs All Tide</text>
+      <circle cx="468" cy="543" r="2" fill="#34D399"/>
+      <text x="477" y="546" fill="#CBD5E1" font-size="10.5">Automatic rejection &amp; Sandheads lighterage notice</text>
+    </g>
+    <!-- Node Card: Stem Split &amp; Lighterage -->
+    <g filter="url(#dropShadow)">
+      <rect x="852" y="456" width="376" height="108" rx="10" fill="url(#cardGradDark)" stroke="#1E293B" stroke-width="1.2"/>
+      <!-- Top Accent Bar -->
+      <path d="M 854 456 L 1226 456" stroke="#34D399" stroke-width="2.5" stroke-linecap="round"/>
+      <!-- Icon Container -->
+      <rect x="864" y="468" width="28" height="28" rx="6" fill="#0B132B" stroke="#34D399" stroke-opacity="0.3" stroke-width="1"/>
+      <g transform="translate(868, 472)">
+        <g transform="translate(0, 0)">
+          <rect x="2" y="3" width="16" height="5" rx="1.5" fill="none" stroke="#34D399" stroke-width="1.5"/>
+          <rect x="2" y="12" width="16" height="5" rx="1.5" fill="none" stroke="#34D399" stroke-width="1.5"/>
+          <circle cx="5" cy="5.5" r="1" fill="#34D399"/>
+          <circle cx="5" cy="14.5" r="1" fill="#34D399"/>
+          <line x1="13" y1="8" x2="13" y2="12" stroke="#34D399" stroke-width="1.4"/>
+        </g>
+      </g>
+      <!-- Title & Subtitle Badge -->
+      <text x="900" y="480" fill="#F8FAFC" font-size="12.5" font-weight="700">Stem Split &amp; Lighterage</text>
+      <rect x="900" y="485" width="158.8" height="14" rx="3" fill="#1E293B"/>
+      <text x="905" y="495.5" fill="#34D399" font-size="9" font-weight="600" letter-spacing="0.3">OPTIMIZATION &#183; MULTIPORT</text>
+      
+      <circle cx="868" cy="507" r="2" fill="#34D399"/>
+      <text x="877" y="510" fill="#CBD5E1" font-size="10.5">Cost optimizer for multi-port discharge stems</text>
+      <circle cx="868" cy="525" r="2" fill="#34D399"/>
+      <text x="877" y="528" fill="#CBD5E1" font-size="10.5">Lighterage barge transfer cost calculator</text>
+      <circle cx="868" cy="543" r="2" fill="#34D399"/>
+      <text x="877" y="546" fill="#CBD5E1" font-size="10.5">Optimized routing: recommend_routes algorithm</text>
+    </g>
+    <!-- Node Card: Indian Berth &amp; Port Specs -->
+    <g filter="url(#dropShadow)">
+      <rect x="52" y="630" width="376" height="108" rx="10" fill="url(#cardGradDark)" stroke="#1E293B" stroke-width="1.2"/>
+      <!-- Top Accent Bar -->
+      <path d="M 54 630 L 426 630" stroke="#FBBF24" stroke-width="2.5" stroke-linecap="round"/>
+      <!-- Icon Container -->
+      <rect x="64" y="642" width="28" height="28" rx="6" fill="#0B132B" stroke="#FBBF24" stroke-opacity="0.3" stroke-width="1"/>
+      <g transform="translate(68, 646)">
+        <g transform="translate(0, 0)">
+          <ellipse cx="10" cy="4.5" rx="7" ry="2.5" fill="none" stroke="#FBBF24" stroke-width="1.6"/>
+          <path d="M 3 4.5 L 3 14.5 C 3 16.5 17 16.5 17 14.5 L 17 4.5" fill="none" stroke="#FBBF24" stroke-width="1.6"/>
+          <path d="M 3 9.5 C 3 11.5 17 11.5 17 9.5" fill="none" stroke="#FBBF24" stroke-width="1.5"/>
+        </g>
+      </g>
+      <!-- Title & Subtitle Badge -->
+      <text x="100" y="654" fill="#F8FAFC" font-size="12.5" font-weight="700">Indian Berth &amp; Port Specs</text>
+      <rect x="100" y="659" width="115.4" height="14" rx="3" fill="#1E293B"/>
+      <text x="105" y="669.5" fill="#FBBF24" font-size="9" font-weight="600" letter-spacing="0.3">DATA &#183; BERTHS.CSV</text>
+      
+      <circle cx="68" cy="681" r="2" fill="#FBBF24"/>
+      <text x="77" y="684" fill="#CBD5E1" font-size="10.5">Hydrographic depth, LOA, beam limits per berth</text>
+      <circle cx="68" cy="699" r="2" fill="#FBBF24"/>
+      <text x="77" y="702" fill="#CBD5E1" font-size="10.5">Major ports: Paradip, Visakhapatnam, Haldia, etc.</text>
+      <circle cx="68" cy="717" r="2" fill="#FBBF24"/>
+      <text x="77" y="720" fill="#CBD5E1" font-size="10.5">lighterage_nodes.csv offshore transfer specs</text>
+    </g>
+    <!-- Node Card: Historical Freight Series -->
+    <g filter="url(#dropShadow)">
+      <rect x="452" y="630" width="376" height="108" rx="10" fill="url(#cardGradDark)" stroke="#1E293B" stroke-width="1.2"/>
+      <!-- Top Accent Bar -->
+      <path d="M 454 630 L 826 630" stroke="#FBBF24" stroke-width="2.5" stroke-linecap="round"/>
+      <!-- Icon Container -->
+      <rect x="464" y="642" width="28" height="28" rx="6" fill="#0B132B" stroke="#FBBF24" stroke-opacity="0.3" stroke-width="1"/>
+      <g transform="translate(468, 646)">
+        <g transform="translate(0, 0)">
+          <ellipse cx="10" cy="4.5" rx="7" ry="2.5" fill="none" stroke="#FBBF24" stroke-width="1.6"/>
+          <path d="M 3 4.5 L 3 14.5 C 3 16.5 17 16.5 17 14.5 L 17 4.5" fill="none" stroke="#FBBF24" stroke-width="1.6"/>
+          <path d="M 3 9.5 C 3 11.5 17 11.5 17 9.5" fill="none" stroke="#FBBF24" stroke-width="1.5"/>
+        </g>
+      </g>
+      <!-- Title & Subtitle Badge -->
+      <text x="500" y="654" fill="#F8FAFC" font-size="12.5" font-weight="700">Historical Freight Series</text>
+      <rect x="500" y="659" width="158.8" height="14" rx="3" fill="#1E293B"/>
+      <text x="505" y="669.5" fill="#FBBF24" font-size="9" font-weight="600" letter-spacing="0.3">DATA &#183; FREIGHT_RATES.CSV</text>
+      
+      <circle cx="468" cy="681" r="2" fill="#FBBF24"/>
+      <text x="477" y="684" fill="#CBD5E1" font-size="10.5">10+ years historical route &amp; charter rates</text>
+      <circle cx="468" cy="699" r="2" fill="#FBBF24"/>
+      <text x="477" y="702" fill="#CBD5E1" font-size="10.5">Weekly frequency cleaned time-series data</text>
+      <circle cx="468" cy="717" r="2" fill="#FBBF24"/>
+      <text x="477" y="720" fill="#CBD5E1" font-size="10.5">Basis for baseline SARIMAX model calibrations</text>
+    </g>
+    <!-- Node Card: Live Market Data Ingestion -->
+    <g filter="url(#dropShadow)">
+      <rect x="852" y="630" width="376" height="108" rx="10" fill="url(#cardGradDark)" stroke="#1E293B" stroke-width="1.2"/>
+      <!-- Top Accent Bar -->
+      <path d="M 854 630 L 1226 630" stroke="#FBBF24" stroke-width="2.5" stroke-linecap="round"/>
+      <!-- Icon Container -->
+      <rect x="864" y="642" width="28" height="28" rx="6" fill="#0B132B" stroke="#FBBF24" stroke-opacity="0.3" stroke-width="1"/>
+      <g transform="translate(868, 646)">
+        <g transform="translate(0, 0)">
+          <path d="M 5.5 15 C 3.5 15 2 13.5 2 11.5 C 2 9.8 3.2 8.3 4.8 8.1 C 5.5 5.5 8 3.5 11 3.5 C 14.2 3.5 16.8 5.8 17.2 9 C 18.2 9.5 19 10.5 19 11.8 C 19 13.5 17.5 15 15.8 15 Z" fill="none" stroke="#FBBF24" stroke-width="1.5"/>
+        </g>
+      </g>
+      <!-- Title & Subtitle Badge -->
+      <text x="900" y="654" fill="#F8FAFC" font-size="12.5" font-weight="700">Live Market Data Ingestion</text>
+      <rect x="900" y="659" width="158.8" height="14" rx="3" fill="#1E293B"/>
+      <text x="905" y="669.5" fill="#FBBF24" font-size="9" font-weight="600" letter-spacing="0.3">FEED &#183; YAHOO &amp; FRED APIS</text>
+      
+      <circle cx="868" cy="681" r="2" fill="#FBBF24"/>
+      <text x="877" y="684" fill="#CBD5E1" font-size="10.5">data_refresh.py pulls Brent Crude (BZ=F)</text>
+      <circle cx="868" cy="699" r="2" fill="#FBBF24"/>
+      <text x="877" y="702" fill="#CBD5E1" font-size="10.5">USD/INR exchange rates (INR=X) from Stooq</text>
+      <circle cx="868" cy="717" r="2" fill="#FBBF24"/>
+      <text x="877" y="720" fill="#CBD5E1" font-size="10.5">FRED DCOILBRENTEU automated weekly updates</text>
+    </g><path d="M 240 216 L 240 280" fill="none" stroke="#38BDF8" stroke-width="1.8" marker-end="url(#arrowCyan)"/>
+        <rect x="195.0" y="240.5" width="90.0" height="15" rx="4" fill="#090E1A" stroke="#38BDF8" stroke-width="0.9"/>
+        <text x="240" y="251.5" fill="#38BDF8" font-size="8.5" font-weight="600" text-anchor="middle">VOYAGE PARAMS</text><path d="M 640 216 L 640 280" fill="none" stroke="#38BDF8" stroke-width="1.8" marker-end="url(#arrowCyan)"/>
+        <rect x="595.0" y="240.5" width="90.0" height="15" rx="4" fill="#090E1A" stroke="#38BDF8" stroke-width="0.9"/>
+        <text x="640" y="251.5" fill="#38BDF8" font-size="8.5" font-weight="600" text-anchor="middle">BERTH QUERIES</text><path d="M 1040 216 L 1040 280" fill="none" stroke="#38BDF8" stroke-width="1.8" marker-end="url(#arrowCyan)"/>
+        <rect x="1004.0" y="240.5" width="72.0" height="15" rx="4" fill="#090E1A" stroke="#38BDF8" stroke-width="0.9"/>
+        <text x="1040" y="251.5" fill="#38BDF8" font-size="8.5" font-weight="600" text-anchor="middle">STEM PLANS</text><path d="M 240 390 L 240 454" fill="none" stroke="#818CF8" stroke-width="1.8" marker-end="url(#arrowPurple)"/>
+        <rect x="204.0" y="414.5" width="72.0" height="15" rx="4" fill="#090E1A" stroke="#818CF8" stroke-width="0.9"/>
+        <text x="240" y="425.5" fill="#818CF8" font-size="8.5" font-weight="600" text-anchor="middle">PROJECTION</text><path d="M 640 390 L 640 454" fill="none" stroke="#818CF8" stroke-width="1.8" marker-end="url(#arrowPurple)"/>
+        <rect x="601.0" y="414.5" width="78.0" height="15" rx="4" fill="#090E1A" stroke="#818CF8" stroke-width="0.9"/>
+        <text x="640" y="425.5" fill="#818CF8" font-size="8.5" font-weight="600" text-anchor="middle">TIDAL CHECK</text><path d="M 1040 390 L 1040 454" fill="none" stroke="#818CF8" stroke-width="1.8" marker-end="url(#arrowPurple)"/>
+        <rect x="1004.0" y="414.5" width="72.0" height="15" rx="4" fill="#090E1A" stroke="#818CF8" stroke-width="0.9"/>
+        <text x="1040" y="425.5" fill="#818CF8" font-size="8.5" font-weight="600" text-anchor="middle">LIGHTERAGE</text><path d="M 240 564 L 240 628" fill="none" stroke="#34D399" stroke-width="1.8" marker-end="url(#arrowEmerald)"/>
+        <rect x="204.0" y="588.5" width="72.0" height="15" rx="4" fill="#090E1A" stroke="#34D399" stroke-width="0.9"/>
+        <text x="240" y="599.5" fill="#34D399" font-size="8.5" font-weight="600" text-anchor="middle">BERTH DATA</text><path d="M 640 564 L 640 628" fill="none" stroke="#34D399" stroke-width="1.8" marker-end="url(#arrowEmerald)"/>
+        <rect x="604.0" y="588.5" width="72.0" height="15" rx="4" fill="#090E1A" stroke="#34D399" stroke-width="0.9"/>
+        <text x="640" y="599.5" fill="#34D399" font-size="8.5" font-weight="600" text-anchor="middle">CSV SERIES</text><path d="M 1040 564 L 1040 628" fill="none" stroke="#34D399" stroke-width="1.8" marker-end="url(#arrowEmerald)"/>
+        <rect x="1004.0" y="588.5" width="72.0" height="15" rx="4" fill="#090E1A" stroke="#34D399" stroke-width="0.9"/>
+        <text x="1040" y="599.5" fill="#34D399" font-size="8.5" font-weight="600" text-anchor="middle">LIVE TICKS</text>
+    <!-- System Architecture Legend -->
+    <rect x="36" y="766" width="1208" height="36" rx="8" fill="#0B132B" stroke="#1E293B" stroke-width="1"/>
+    <text x="52" y="787.5" fill="#F8FAFC" font-size="10" font-weight="700" letter-spacing="0.5">FLOW SIGNALS:</text>
+    
+      <circle cx="156" cy="784.0" r="3.5" fill="#38BDF8"/>
+      <text x="165" y="787.5" fill="#94A3B8" font-size="9.5" font-weight="500">Client UI &amp; Map Views</text>
+      <circle cx="324.5" cy="784.0" r="3.5" fill="#818CF8"/>
+      <text x="333.5" y="787.5" fill="#94A3B8" font-size="9.5" font-weight="500">FastAPI &amp; Parameter Matcher</text>
+      <circle cx="532.0" cy="784.0" r="3.5" fill="#34D399"/>
+      <text x="541.0" y="787.5" fill="#94A3B8" font-size="9.5" font-weight="500">SARIMAX &amp; Hydrographic Resolver</text>
+      <circle cx="765.5" cy="784.0" r="3.5" fill="#FBBF24"/>
+      <text x="774.5" y="787.5" fill="#94A3B8" font-size="9.5" font-weight="500">Berth Specs &amp; Market Feeds</text>
 </svg>
