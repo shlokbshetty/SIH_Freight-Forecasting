@@ -1,6 +1,50 @@
 # FreightIQ System Architecture
 
-![FreightIQ System Architecture Overview](assets/system-overview.svg)
+```mermaid
+flowchart TD
+    subgraph ClientTier ["1. Maritime Client & Mapping UI (:5173)"]
+        MaritimeSPA["React 19 Maritime SPA<br/>(Vite 8 + Tailwind CSS + Lucide)"]
+        PortMap["Interactive Leaflet Map<br/>(PortMap.tsx + CartoDB Nautical Tiles)"]
+        StemPlanner["Multi-Port Stem Planner<br/>(Parcel Allocation & Demurrage Analyzer)"]
+        ForecastCharts["Forecast & Macro Strip<br/>(Charter Rate Projections & Indicators)"]
+    end
+
+    subgraph GatewayTier ["2. API Gateway & Validation Layer (:8000)"]
+        FastAPIGateway["FastAPI REST API Server<br/>(13 Endpoints + Pydantic v2 Contracts)"]
+        VesselMatcher["Vessel Parameter Matcher<br/>(Capesize, Panamax, Supramax, Handymax)"]
+        RateCache["In-Memory Rate & Session Cache<br/>(Historical Series & Result Buffers)"]
+    end
+
+    subgraph EngineTier ["3. Econometric & Hydrographic Engines"]
+        SARIMAXEngine["Two-Stage SARIMAX(1,1,1)<br/>(log(rate) Model + Z-Scored Exogenous Regressors)"]
+        BerthResolver["Hydrographic Berth Resolver<br/>(resolver.py 5-Step Draft & Tide Cascade)"]
+        LighterageOptimizer["Multi-Port Split & Lighterage<br/>(Sandheads & Sagar Offshore Transshipment)"]
+    end
+
+    subgraph DataTier ["4. Physical Ports, Time-Series & Market Feeds"]
+        BerthsCSV[("Indian Port & Berth Specs<br/>(data/berths.csv & lighterage_nodes.csv)")]
+        FreightSeries[("Historical Freight Rates<br/>(data/freight_rates.csv 10+ Years History)")]
+        MarketFeeds["Live Market Ingestion<br/>(Yahoo Finance BZ=F, FRED Brent, Stooq INR=X)"]
+    end
+
+    MaritimeSPA --> PortMap
+    MaritimeSPA --> StemPlanner
+    MaritimeSPA --> ForecastCharts
+
+    MaritimeSPA -->|REST Requests| FastAPIGateway
+    FastAPIGateway --> VesselMatcher
+    FastAPIGateway --> RateCache
+
+    VesselMatcher --> SARIMAXEngine
+    FastAPIGateway --> BerthResolver
+    FastAPIGateway --> LighterageOptimizer
+
+    SARIMAXEngine --> FreightSeries
+    SARIMAXEngine --> MarketFeeds
+    BerthResolver --> BerthsCSV
+    LighterageOptimizer --> BerthsCSV
+
+```
 
 ---
 
@@ -154,8 +198,6 @@ SIH_Freight-Forecasting/
 ├── tests/                                # Root property-based & unit tests (breakeven, monotonicity, ML quantiles)
 
 ├── docs/
-│   ├── assets/
-│   │   └── system-overview.svg           # System architecture diagram
 
 │   ├── ARCHITECTURE.md                   # Detailed architecture specification
 

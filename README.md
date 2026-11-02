@@ -59,8 +59,6 @@ flowchart TD
 
 ```
 
-> **Visual Asset**: A standalone vector version is also available at [`docs/assets/system-overview.svg`](docs/assets/system-overview.svg).
-
 FreightIQ is structured around a strict **zero-network-on-request-path** architecture across five tiers:
 1. **React 19 Operational Command Deck (`src/`)**: Ten specialized analytical views (`CommandCenter`, `Map`, `Forecast`, `Matcher`, `ContractComparison`, `Evaluate`, `MarketTiming`, `IdlePlanner`, `RiskAlerts`, `VoyageEditor`) backed by `useApiResource` with an 8-second `AbortController` timeout and automatic client-side fallback (`src/lib/fallbacks.ts`) when the backend is unreachable.
 2. **FastAPI Async Gateway (`backend/app/`)**: Seven modular routers (`ports`, `match`, `forecast`, `contract`, `evaluate`, `series`, `status`) serving strictly from local SQLite WAL cache and pre-fitted model bundles.
