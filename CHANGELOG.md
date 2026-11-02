@@ -9,6 +9,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 ## [v0.2.0] - 2026-10-28
 
 ### Added
+
 - **Log-Space SARIMAX Projection Engine (`backend/models/project.py`, `backend/train.py`)**:
   - Fitted per-class `SARIMAX(1, 1, 1)` models on `log(rate)` with z-scored exogenous regressors (`log_bdi`, `log_gogl`, `log_sblk`, `log_bunker`, `log_coal`, `log_iron_ore`, `log_usdinr`, `monsoon`, `month_sin`, `month_cos`).
   - Added Nelder-Mead simplex warm-start fallback (`_fit_with_warm_start`) when L-BFGS stalls on collinear regressors.
@@ -28,11 +29,14 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - **Unified Process-Group Orchestrator (`run.sh`)**: Added single-script setup, CPython 3.12 detection, offline mode (`--offline`), model retraining (`--retrain`), and full test execution (`--test`).
 
 ### Changed
+
 - Corrected per-tonne freight rate ordering in backend economics so economies of scale hold (`Capesize < Panamax < Supramax < Handysize` on a USD/tonne basis).
 - Resampled sparse monthly macro/bunker series (`FRED coal`, `bunker_vlsfo.csv`) using time-based linear interpolation (`_densify`) rather than staircase forward-filling.
 
 ### Removed
+
 - Excluded container liner equity `ZIM` from dry-bulk SARIMAX regressors (`FEATURES`) to prevent cross-sector noise contamination.
 
 ### Fixed
+
 - Added `OWN_DRIVER` circularity guard in `backend/models/project.py` so each vessel class drops the proxy series that generated its synthetic target in `backend/data/ingest.py`.

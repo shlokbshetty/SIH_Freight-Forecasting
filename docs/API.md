@@ -40,22 +40,27 @@ This document provides the complete technical reference for the **FreightIQ Fast
 ## 3. Detailed Endpoint Specifications
 
 ### 3.1 `GET /api/health`
+
 Returns service liveness and whether `FREIGHTIQ_OFFLINE` is active.
 
 **Response `200 OK`:**
+
 ```json
 {
   "status": "ok",
   "offline_mode": false
 }
+
 ```
 
 ---
 
 ### 3.2 `GET /api/ports`
+
 Returns all East Coast India discharge ports (`paradip`, `vizag`, `gangavaram`, `gopalpur`, `dhamra`, `sagar-sandheads`, `haldia`) with their constituent berths from `berths.csv`, lighterage anchorages from `lighterage_nodes.csv`, live congestion (`wait_days`, `vessels_at_anchor`), global loading ports, and vessel class specifications.
 
 **Response `200 OK` (abbreviated):**
+
 ```json
 {
   "as_of": "2026-10-28T16:50:00+00:00",
@@ -116,16 +121,19 @@ Returns all East Coast India discharge ports (`paradip`, `vizag`, `gangavaram`, 
     "Capesize": {"dwt": 180000, "loa_m": 292.0, "beam_m": 45.0, "laden_draft_m": 18.2}
   }
 }
+
 ```
 
 ---
 
 ### 3.3 `GET /api/ports/{port_key}/berths`
+
 Returns all berths and lighterage nodes for a single port. Accepts either slug (`vizag`, `paradip`, `haldia`) or canonical name (`Visakhapatnam`, `Paradip`, `Haldia`).
 
 **Example Request:** `GET /api/ports/haldia/berths`
 
 **Response `200 OK`:**
+
 ```json
 {
   "port": "Haldia",
@@ -157,6 +165,7 @@ Returns all berths and lighterage nodes for a single port. Accepts either slug (
   ],
   "provenance": {}
 }
+
 ```
 
 **Error Responses:**
@@ -165,6 +174,7 @@ Returns all berths and lighterage nodes for a single port. Accepts either slug (
 ---
 
 ### 3.4 `POST /api/match`
+
 Runs all four vessel classes (`Handysize`, `Supramax`, `Panamax`, `Capesize`) through `resolve_berth()` for a given discharge port, commodity, and parcel tonnage, ranking `ACCEPT_ALL_TIDE` ahead of `ACCEPT_HIGH_TIDE_ONLY` ahead of `REJECT`.
 
 **Request Schema (`MatchRequest`):**
@@ -177,15 +187,18 @@ Runs all four vessel classes (`Handysize`, `Supramax`, `Panamax`, `Capesize`) th
 | `vessel_draft_m` | `float \| null` | `null` | `> 0`, `<= 30` | Optional explicit draft override in meters |
 
 **Concrete Request Payload:**
+
 ```json
 {
   "discharge_port_id": "haldia",
   "cargo_tonnes": 52000,
   "commodity": "thermal_coal"
 }
+
 ```
 
 **Response `200 OK` (`MatchResponse`):**
+
 ```json
 {
   "discharge_port_id": "haldia",
@@ -224,6 +237,7 @@ Runs all four vessel classes (`Handysize`, `Supramax`, `Panamax`, `Capesize`) th
     }
   ]
 }
+
 ```
 
 **Error Responses:**
@@ -233,6 +247,7 @@ Runs all four vessel classes (`Handysize`, `Supramax`, `Panamax`, `Capesize`) th
 ---
 
 ### 3.5 `POST /api/forecast`
+
 Projects daily per-tonne freight rates (`USD/tonne`) for a vessel class using the pre-trained log-SARIMAX model (`SARIMAXResults.apply(..., refit=False)`) with asymmetric `p80` and `p95` confidence bands, dollar-per-tonne exogenous driver contributions, rolling backtest accuracy metrics, and optional what-if scenario overrides.
 
 **Request Schema (`ForecastRequest`):**
@@ -244,6 +259,7 @@ Projects daily per-tonne freight rates (`USD/tonne`) for a vessel class using th
 | `scenario` | `dict[str, float] \| null` | `null` | Keys: `bdi`, `bunker`, `coal`, `iron_ore`, `usdinr`, `monsoon` | Optional what-if overrides in natural units (e.g., `{"bunker": 800}`) |
 
 **Concrete Request Payload:**
+
 ```json
 {
   "vessel_class": "Panamax",
@@ -254,9 +270,11 @@ Projects daily per-tonne freight rates (`USD/tonne`) for a vessel class using th
     "coal": 135.0
   }
 }
+
 ```
 
 **Response `200 OK` (`ForecastResponse`):**
+
 ```json
 {
   "vessel_class": "Panamax",
@@ -306,6 +324,7 @@ Projects daily per-tonne freight rates (`USD/tonne`) for a vessel class using th
     "log_bdi excluded from this class's regressors: it derives the target"
   ]
 }
+
 ```
 
 **Error & Fallback Behavior:**
@@ -315,9 +334,11 @@ Projects daily per-tonne freight rates (`USD/tonne`) for a vessel class using th
 ---
 
 ### 3.6 `POST /api/contract`
+
 Prices a multi-voyage bulk cargo import programme across **Spot**, **Consecutive Voyage Charter (CVC)**, and **Period Time Charter (`ptc`)**, spacing voyage departures by the resolved berth and lighterage turnaround time.
 
 **Request Schema (`ContractRequest`):**
+
 ```json
 {
   "load_port_id": "newcastle",
@@ -330,9 +351,11 @@ Prices a multi-voyage bulk cargo import programme across **Spot**, **Consecutive
   "demurrage_usd_per_day": 22000.0,
   "cvc_discount_pct": 5.0
 }
+
 ```
 
 **Response `200 OK` (`ContractResponse`):**
+
 ```json
 {
   "route": "Newcastle -> Paradip",
@@ -370,14 +393,17 @@ Prices a multi-voyage bulk cargo import programme across **Spot**, **Consecutive
   "as_of": "2026-10-28T16:50:00+00:00",
   "sources_stale": []
 }
+
 ```
 
 ---
 
 ### 3.7 `POST /api/contract/multiport`
+
 Evaluates splitting a single parcel across two discharge ports (e.g., discharging part cargo at deep-water **Gangavaram** so the lightened vessel can enter shallow-draft **Haldia** without barge lighterage).
 
 **Request Payload (`MultiPortRequest`):**
+
 ```json
 {
   "load_port_id": "newcastle",
@@ -387,6 +413,7 @@ Evaluates splitting a single parcel across two discharge ports (e.g., dischargin
   "total_tonnes": 72000,
   "demurrage_usd_per_day": 22000.0
 }
+
 ```
 
 **Response `200 OK`:** Returns single-port vs. two-port split cost breakdowns, optimal split tonnage at port 1 vs. port 2, resulting arrival draft at port 2, and net savings in USD and `₹ Crore`.
@@ -394,9 +421,11 @@ Evaluates splitting a single parcel across two discharge ports (e.g., dischargin
 ---
 
 ### 3.8 `GET /api/ports/catalog` & `POST /api/evaluate`
+
 Compatibility endpoints backing the `Evaluate.tsx` page using uppercase port/vessel codes (`PPA`, `VIZAG`, `GANGAVARAM`, `GOPALPUR`, `DHAMRA`, `HALDIA`, `HAY_POINT`, `NEWCASTLE`, `TABONEO`, `MAPUTO`, `BALTIMORE` and `HANDYSIZE`, `SUPRAMAX`, `PANAMAX`, `CAPESIZE`).
 
 **`POST /api/evaluate` Request Payload (`EvaluateRequest`):**
+
 ```json
 {
   "cargo_tonnage": 75000,
@@ -406,6 +435,7 @@ Compatibility endpoints backing the `Evaluate.tsx` page using uppercase port/ves
   "num_voyages": 4,
   "cvc_discount_pct": 5.0
 }
+
 ```
 
 **Response `200 OK`:** Returns `is_cvc_favorable`, `locked_cvc_rate`, `average_spot_rate`, `spot_total_usd`, `cvc_total_usd`, `base_case_delta_usd`, `base_case_delta_inr`, `base_case_delta_cr`, `breakeven_spot_rate`, `breakeven_probability_pct`, `p10_rates`, `p50_rates`, `p90_rates`, per-voyage breakdown (`voyages`), and `lighterage_plan`.
@@ -413,6 +443,7 @@ Compatibility endpoints backing the `Evaluate.tsx` page using uppercase port/ves
 ---
 
 ### 3.9 `GET /api/series` & `GET /api/series/metrics`
+
 Query raw cached time-series observations from `cache.db`.
 
 **Query Parameters for `GET /api/series`:**
@@ -421,9 +452,10 @@ Query raw cached time-series observations from `cache.db`.
 - `days` (`int`, default `365`, range `1`–`1825`): Lookback window in days.
 - `latest_only` (`bool`, default `false`): Return only the most recent observation per metric.
 
-**Example Request:** `GET /api/series?metrics=baltic.bdi,macro.usdinr&days=30&latest_only=true`
+**Example Request:** `GET /api/series — metrics=baltic.bdi,macro.usdinr&days=30&latest_only=true`
 
 **Response `200 OK`:**
+
 ```json
 {
   "as_of": "2026-10-28T16:50:00+00:00",
@@ -445,14 +477,17 @@ Query raw cached time-series observations from `cache.db`.
     }
   }
 }
+
 ```
 
 ---
 
 ### 3.10 `GET /api/data/status` & `POST /api/data/refresh`
+
 Inspects per-adapter freshness, proxy status, and startup validation warnings, or triggers an on-demand ingestion cycle.
 
 **`GET /api/data/status` Response `200 OK` (`DataStatusResponse`):**
+
 ```json
 {
   "as_of": "2026-10-28T16:50:00+00:00",
@@ -474,4 +509,5 @@ Inspects per-adapter freshness, proxy status, and startup validation warnings, o
     }
   ]
 }
+
 ```

@@ -1,11 +1,11 @@
 # FreightIQ: Predictive Maritime Freight & Chartering Optimization
 
-[![React](https://img.shields.io/badge/React-19.2.8%20%7C%20TypeScript_6.0-61DAFB?style=for-the-badge&logo=react&logoColor=black)](https://react.dev/)
-[![FastAPI](https://img.shields.io/badge/FastAPI-0.115%20%7C%20Python_3.12-009688?style=for-the-badge&logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com/)
-[![SARIMAX](https://img.shields.io/badge/Forecasting-Statsmodels_SARIMAX%20%7C%20GBR-7c3aed?style=for-the-badge)](https://www.statsmodels.org/)
-[![Leaflet](https://img.shields.io/badge/Geospatial-React--Leaflet_5.0-199900?style=for-the-badge&logo=leaflet&logoColor=white)](https://leafletjs.com/)
-[![Recharts](https://img.shields.io/badge/Analytics-Recharts_3.10-22b5bf?style=for-the-badge)](https://recharts.org/)
-[![License](https://img.shields.io/badge/License-MIT-blue.svg?style=for-the-badge)](LICENSE)
+[![React](https://img.shields.io/badge/React-19.2.8%20%7C%20TypeScript_6.0-61DAFB — style=for-the-badge&logo=react&logoColor=black)](https://react.dev/)
+[![FastAPI](https://img.shields.io/badge/FastAPI-0.115%20%7C%20Python_3.12-009688 — style=for-the-badge&logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com/)
+[![SARIMAX](https://img.shields.io/badge/Forecasting-Statsmodels_SARIMAX%20%7C%20GBR-7c3aed — style=for-the-badge)](https://www.statsmodels.org/)
+[![Leaflet](https://img.shields.io/badge/Geospatial-React--Leaflet_5.0-199900 — style=for-the-badge&logo=leaflet&logoColor=white)](https://leafletjs.com/)
+[![Recharts](https://img.shields.io/badge/Analytics-Recharts_3.10-22b5bf — style=for-the-badge)](https://recharts.org/)
+[![License](https://img.shields.io/badge/License-MIT-blue.svg — style=for-the-badge)](LICENSE)
 
 **FreightIQ** (`SIH_Freight-Forecasting`) is an offline-resilient maritime freight forecasting and bulk vessel-chartering decision platform engineered for dry-bulk cargo imports (thermal coal, coking coal, iron ore, limestone, fertilizers) across India's East Coast ports (**Paradip, Visakhapatnam, Gangavaram, Dhamra, Gopalpur, Haldia, and Sagar/Sandheads**). It pairs a **React 19 + TypeScript 6.0** analytical command deck with a **FastAPI + Statsmodels SARIMAX** quantitative backend that forecasts vessel-class freight rates (`Handysize`, `Supramax`, `Panamax`, `Capesize`) over 30-, 90-, and 180-day horizons, resolves berth-level physical compatibility with tidal and lighterage economics, and prices **Spot vs. Consecutive Voyage Charter (CVC) vs. Period Time Charter (PTC)** structures in both USD and Indian Rupee Crores (`₹ Cr`).
 
@@ -13,7 +13,53 @@
 
 ## System Architecture Overview
 
-![FreightIQ System Architecture Overview](docs/assets/system-overview.svg)
+```mermaid
+flowchart TD
+    subgraph ClientTier ["1. Maritime Client & Mapping UI (:5173)"]
+        MaritimeSPA["React 19 Maritime SPA<br/>(Vite 8 + Tailwind CSS + Lucide)"]
+        PortMap["Interactive Leaflet Map<br/>(PortMap.tsx + CartoDB Nautical Tiles)"]
+        StemPlanner["Multi-Port Stem Planner<br/>(Parcel Allocation & Demurrage Analyzer)"]
+        ForecastCharts["Forecast & Macro Strip<br/>(Charter Rate Projections & Indicators)"]
+    end
+
+    subgraph GatewayTier ["2. API Gateway & Validation Layer (:8000)"]
+        FastAPIGateway["FastAPI REST API Server<br/>(13 Endpoints + Pydantic v2 Contracts)"]
+        VesselMatcher["Vessel Parameter Matcher<br/>(Capesize, Panamax, Supramax, Handymax)"]
+        RateCache["In-Memory Rate & Session Cache<br/>(Historical Series & Result Buffers)"]
+    end
+
+    subgraph EngineTier ["3. Econometric & Hydrographic Engines"]
+        SARIMAXEngine["Two-Stage SARIMAX(1,1,1)<br/>(log(rate) Model + Z-Scored Exogenous Regressors)"]
+        BerthResolver["Hydrographic Berth Resolver<br/>(resolver.py 5-Step Draft & Tide Cascade)"]
+        LighterageOptimizer["Multi-Port Split & Lighterage<br/>(Sandheads & Sagar Offshore Transshipment)"]
+    end
+
+    subgraph DataTier ["4. Physical Ports, Time-Series & Market Feeds"]
+        BerthsCSV[("Indian Port & Berth Specs<br/>(data/berths.csv & lighterage_nodes.csv)")]
+        FreightSeries[("Historical Freight Rates<br/>(data/freight_rates.csv 10+ Years History)")]
+        MarketFeeds["Live Market Ingestion<br/>(Yahoo Finance BZ=F, FRED Brent, Stooq INR=X)"]
+    end
+
+    MaritimeSPA --> PortMap
+    MaritimeSPA --> StemPlanner
+    MaritimeSPA --> ForecastCharts
+
+    MaritimeSPA -->|REST Requests| FastAPIGateway
+    FastAPIGateway --> VesselMatcher
+    FastAPIGateway --> RateCache
+
+    VesselMatcher --> SARIMAXEngine
+    FastAPIGateway --> BerthResolver
+    FastAPIGateway --> LighterageOptimizer
+
+    SARIMAXEngine --> FreightSeries
+    SARIMAXEngine --> MarketFeeds
+    BerthResolver --> BerthsCSV
+    LighterageOptimizer --> BerthsCSV
+
+```
+
+> **Visual Asset**: A standalone vector version is also available at [`docs/assets/system-overview.svg`](docs/assets/system-overview.svg).
 
 FreightIQ is structured around a strict **zero-network-on-request-path** architecture across five tiers:
 1. **React 19 Operational Command Deck (`src/`)**: Ten specialized analytical views (`CommandCenter`, `Map`, `Forecast`, `Matcher`, `ContractComparison`, `Evaluate`, `MarketTiming`, `IdlePlanner`, `RiskAlerts`, `VoyageEditor`) backed by `useApiResource` with an 8-second `AbortController` timeout and automatic client-side fallback (`src/lib/fallbacks.ts`) when the backend is unreachable.
@@ -43,56 +89,84 @@ For full architectural details, mathematical formulations, and data provenance r
 ## Step-by-Step Local Setup & Execution
 
 ### Option A: One-Command Orchestrated Launch (`./run.sh`)
+
 The repository includes an idempotent process-group orchestrator (`./run.sh`) that provisions `backend/.venv`, installs Python and npm dependencies, fits the SARIMAX models if pickles are missing, and launches both the FastAPI backend (`:8000`) and Vite dashboard (`:5173`):
 
 ```bash
+
 # Full setup, offline model training (if needed), and concurrent launch
+
 ./run.sh
 
 # Useful flags:
+
 ./run.sh --setup      # Install dependencies and train models, then exit
+
 ./run.sh --backend    # Run FastAPI service only (:8000)
+
 ./run.sh --frontend   # Run React Vite dashboard only (:5173)
+
 ./run.sh --offline    # Run with FREIGHTIQ_OFFLINE=1 (blocks all outbound network calls)
+
 ./run.sh --retrain    # Refit all SARIMAX pickles before starting
+
 ./run.sh --test       # Execute backend pytest suite + frontend tsc, oxlint, and vite build
+
 ./run.sh --stop       # Terminate any processes listening on :8000 and :5173
+
 ```
 
 ### Option B: Manual Step-by-Step Setup (Windows PowerShell / Linux / macOS)
 
 #### 1. Backend Setup & Model Training
+
 ```bash
 cd backend
 python -m venv .venv
 
 # Activate virtual environment:
+
 # Windows PowerShell:
+
 .\.venv\Scripts\Activate.ps1
+
 # Linux / macOS:
+
 source .venv/bin/activate
 
 # Install runtime and test dependencies
+
 pip install -r requirements-dev.txt
 
 # Fit SARIMAX models for all 4 vessel classes from the committed snapshot
+
 python train.py
 
 # Start the FastAPI server on port 8000
+
 uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+
 ```
+
 Open `http://localhost:8000/docs` for the interactive OpenAPI / Swagger UI.
 
 #### 2. Frontend Setup & Launch
+
 In a second terminal at the repository root:
+
 ```bash
+
 # Copy environment template (defaults to VITE_API_BASE=http://localhost:8000)
+
 cp .env.example .env
 
 # Install dependencies and start Vite dev server on port 5173
+
 npm install
 npm run dev
+
 ```
+
 Open `http://localhost:5173` in your browser.
 
 ---
@@ -100,15 +174,20 @@ Open `http://localhost:5173` in your browser.
 ## Build, Verification & Testing Commands
 
 ```bash
+
 # 1. Run backend pytest suite (berth resolution, economics, ingestion, invariants)
+
 cd backend && pytest tests -q
 
 # 2. Run root-level engine & property-based (Hypothesis) test suites
+
 pytest tests -q
 
 # 3. Type-check TypeScript (6.0), run Oxlint, and build production bundle
+
 npm run lint
 npm run build
+
 ```
 
 ---

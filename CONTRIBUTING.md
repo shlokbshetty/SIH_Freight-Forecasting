@@ -28,9 +28,11 @@ All commits must follow the [Conventional Commits v1.0.0](https://www.convention
 [optional body explaining quantitative or architectural rationale]
 
 [optional footer(s): Closes #123, BREAKING CHANGE: ...]
+
 ```
 
 ### Allowed Types & Scopes
+
 - **Types**: `feat`, `fix`, `docs`, `style`, `refactor`, `perf`, `test`, `build`, `ci`, `chore`, `revert`
 - **Scopes**: `forecast`, `berths`, `costing`, `ingest`, `cache`, `api`, `ui`, `evaluate`
 
@@ -55,14 +57,18 @@ All commits must follow the [Conventional Commits v1.0.0](https://www.convention
 Run the unified verification suite before opening a Pull Request:
 
 ```bash
+
 # Run both backend pytest and frontend tsc + oxlint + vite build
+
 ./run.sh --test
 
 # Or run each suite individually:
+
 cd backend && pytest tests -q
 pytest tests -q
 npm run lint
 npm run build
+
 ```
 
 ---

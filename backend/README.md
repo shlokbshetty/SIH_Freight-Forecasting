@@ -11,7 +11,9 @@ python -m venv .venv && source .venv/bin/activate
 pip install -r requirements.txt
 
 python train.py                      # fits the models from the committed snapshot
+
 uvicorn app.main:app --reload --port 8000
+
 ```
 
 Open http://localhost:8000/docs. No API key, no account, no network needed for
@@ -29,6 +31,7 @@ Prove it:
 ```bash
 FREIGHTIQ_OFFLINE=1 uvicorn app.main:app --port 8000
 curl -s localhost:8000/api/data/status | python -m json.tool
+
 ```
 
 Every source reports `"is_stale": true` and every endpoint still answers.
@@ -45,8 +48,11 @@ cd backend
 source .venv/bin/activate
 
 python scripts/refresh_snapshot.py              # pull live, then export
+
 python scripts/refresh_snapshot.py --days 730   # keep two years instead of three
+
 python scripts/refresh_snapshot.py --skip-fetch # export what is already cached
+
 ```
 
 The script pulls every adapter, writes the results into `data/cache.db`, then
@@ -63,6 +69,7 @@ Commit the result, then retrain so the pickles match the data:
 ```bash
 python train.py
 git add data/snapshot.json models/metrics.json
+
 ```
 
 ### If you have no market access
@@ -76,6 +83,7 @@ so it cannot be mistaken for live data in the UI.
 
 ```bash
 python scripts/generate_baseline_snapshot.py --days 1095
+
 ```
 
 The snapshot currently committed was produced this way. Replace it with a live
@@ -85,9 +93,13 @@ pull before anyone reads a number off it.
 
 ```bash
 python train.py                    # all four classes, with backtest
+
 python train.py --classes capesize # one class
+
 python train.py --refresh          # pull live data first
+
 python train.py --no-backtest      # skip scoring, much faster
+
 ```
 
 Writes `models/sarimax_<class>.pkl` and `models/metrics.json`. Pickles are
@@ -157,7 +169,9 @@ which ties up a Capesize quay for a Supramax parcel, and not the tightest one
 that technically fits, which leaves nothing for a swell.
 
 > **Verify the numbers before you fix on them.** They are compiled from public
+
 > port-authority material and are indicative. See
+
 > [`data/ports/PROVENANCE.md`](data/ports/PROVENANCE.md).
 
 ## Sources, and what stands in for what
@@ -235,6 +249,52 @@ The same principle runs through the rest:
 - If the scheduler cannot start, the app still serves.
 
 ## Architecture rule
+
+```mermaid
+flowchart TD
+    subgraph ClientTier ["1. Maritime Client & Mapping UI (:5173)"]
+        MaritimeSPA["React 19 Maritime SPA<br/>(Vite 8 + Tailwind CSS + Lucide)"]
+        PortMap["Interactive Leaflet Map<br/>(PortMap.tsx + CartoDB Nautical Tiles)"]
+        StemPlanner["Multi-Port Stem Planner<br/>(Parcel Allocation & Demurrage Analyzer)"]
+        ForecastCharts["Forecast & Macro Strip<br/>(Charter Rate Projections & Indicators)"]
+    end
+
+    subgraph GatewayTier ["2. API Gateway & Validation Layer (:8000)"]
+        FastAPIGateway["FastAPI REST API Server<br/>(13 Endpoints + Pydantic v2 Contracts)"]
+        VesselMatcher["Vessel Parameter Matcher<br/>(Capesize, Panamax, Supramax, Handymax)"]
+        RateCache["In-Memory Rate & Session Cache<br/>(Historical Series & Result Buffers)"]
+    end
+
+    subgraph EngineTier ["3. Econometric & Hydrographic Engines"]
+        SARIMAXEngine["Two-Stage SARIMAX(1,1,1)<br/>(log(rate) Model + Z-Scored Exogenous Regressors)"]
+        BerthResolver["Hydrographic Berth Resolver<br/>(resolver.py 5-Step Draft & Tide Cascade)"]
+        LighterageOptimizer["Multi-Port Split & Lighterage<br/>(Sandheads & Sagar Offshore Transshipment)"]
+    end
+
+    subgraph DataTier ["4. Physical Ports, Time-Series & Market Feeds"]
+        BerthsCSV[("Indian Port & Berth Specs<br/>(data/berths.csv & lighterage_nodes.csv)")]
+        FreightSeries[("Historical Freight Rates<br/>(data/freight_rates.csv 10+ Years History)")]
+        MarketFeeds["Live Market Ingestion<br/>(Yahoo Finance BZ=F, FRED Brent, Stooq INR=X)"]
+    end
+
+    MaritimeSPA --> PortMap
+    MaritimeSPA --> StemPlanner
+    MaritimeSPA --> ForecastCharts
+
+    MaritimeSPA -->|REST Requests| FastAPIGateway
+    FastAPIGateway --> VesselMatcher
+    FastAPIGateway --> RateCache
+
+    VesselMatcher --> SARIMAXEngine
+    FastAPIGateway --> BerthResolver
+    FastAPIGateway --> LighterageOptimizer
+
+    SARIMAXEngine --> FreightSeries
+    SARIMAXEngine --> MarketFeeds
+    BerthResolver --> BerthsCSV
+    LighterageOptimizer --> BerthsCSV
+
+```
 
 Nothing in a request path fetches. The scheduler calls `refresh_all` on a timer,
 adapters write to SQLite, and API handlers read only from the cache. The
